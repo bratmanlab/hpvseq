@@ -1,7 +1,7 @@
 <h1>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/nf-core-hpvseq_logo_dark.png">
-    <img alt="nf-core/hpvseq" src="docs/images/nf-core-hpvseq_logo_light.png">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/bratmanlab-hpvseq_logo_dark.png">
+    <img alt="bratmanlab/hpvseq" src="docs/images/nf-core-hpvseq_logo_light.png">
   </picture>
 </h1>
 
