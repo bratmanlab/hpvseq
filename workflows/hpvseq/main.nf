@@ -3,12 +3,16 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { FASTQC                 } from '../modules/nf-core/fastqc/main'
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
+include { SRATOOLS_FASTERQDUMP   } from '../../modules/nf-core/sratools/fasterqdump'
+include { REFORMAT_FASTQ         } from '../../modules/local/reformatfastq'
+include { FASTQC                 } from '../../modules/nf-core/fastqc'
+include { MULTIQC                } from '../../modules/nf-core/multiqc'
+include { TAGTOHEADER            } from '../../modules/local/tagtoheader'
+include { BWA_MEM                } from '../../modules/nf-core/bwa/mem'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_hpvseq_pipeline'
+include { paramsSummaryMultiqc   } from '../../subworkflows/nf-core/utils_nfcore_pipeline'
+include { softwareVersionsToYAML } from '../../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText } from '../../subworkflows/local/utils_nfcore_hpvseq_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -20,10 +24,44 @@ workflow HPVSEQ {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
+    genome         // string: genome read in from --genome 
+    ch_bwa_index      // channel: path(bwa_index/) for alignment 
+    ch_fasta       // channel: path(genome.fasta)
+
     main:
 
     ch_versions = channel.empty()
     ch_multiqc_files = channel.empty()
+
+    ch_samplesheet
+        .branch {
+            sra:   it[0].is_sra
+            fastq: !it[0].is_sra
+        }
+        .set { ch_inputs }
+    // Use Channel.value() instead of just file()
+    ch_blist = params.blist ? Channel.value(file(params.blist)) : Channel.empty()
+
+
+    //
+    // MODULE: Run sratools/fasterdump
+    //
+    // Define paths (or leave empty if not needed)
+    ch_ncbi_settings = [] 
+    ch_certificate   = []
+    SRATOOLS_FASTERQDUMP (
+        ch_inputs.sra,    // tuple val(meta), path(sra)
+        ch_ncbi_settings,  // path ncbi_settings
+        ch_certificate     // path certificate
+    )
+    //
+    // MODULE: reformat fastq
+    //
+    REFORMAT_FASTQ (
+        SRATOOLS_FASTERQDUMP.out.reads
+    )
+    ch_all_fastqs = REFORMAT_FASTQ.out.reads.mix(ch_inputs.fastq).map { meta, r1, r2 -> [ meta, [r1, r2] ] }
+ 
     //
     // MODULE: Run FastQC
     //
@@ -106,6 +144,22 @@ workflow HPVSEQ {
     emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
+    //
+    // MODULE: Run tag_to_header  
+    //
+    TAGTOHEADER (
+        ch_all_fastqs,
+        ch_blist
+    )
+   
+    //
+    // MODULE: Run bwa mem  
+    //
+    BWA_MEM (
+        TAGTOHEADER.out,
+        [genome, bwa_index], 
+        [genome, fasta] 
+    )
 }
 
 /*

@@ -29,7 +29,8 @@ include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_hpvs
 // TODO nf-core: Remove this line if you don't need a FASTA file
 //   This is an example of how to use getGenomeAttribute() to fetch parameters
 //   from igenomes.config using `--genome`
-params.fasta = getGenomeAttribute('fasta')
+params.fasta        = getGenomeAttribute('fasta')
+params.bwa_index    = getGenomeAttribute('bwa')
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,8 +54,8 @@ workflow NFCORE_HPVSEQ {
     HPVSEQ (
         samplesheet
     )
-    emit:
-    multiqc_report = HPVSEQ.out.multiqc_report // channel: /path/to/multiqc_report.html
+    // emit:
+    // multiqc_report = HPVSEQ.out.multiqc_report // channel: /path/to/multiqc_report.html
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,6 +76,9 @@ workflow {
         args,
         params.outdir,
         params.input,
+        params.skip_fastqc,
+        params.skip_multiqc,
+        params.blist,
         params.help,
         params.help_full,
         params.show_hidden
@@ -83,8 +87,11 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-    NFCORE_HPVSEQ (
-        PIPELINE_INITIALISATION.out.samplesheet
+    HPVSEQ (
+        PIPELINE_INITIALISATION.out.samplesheet,
+        params.genome,
+        params.bwa_index,
+        params.fasta 
     )
     //
     // SUBWORKFLOW: Run completion tasks
@@ -96,7 +103,7 @@ workflow {
         params.outdir,
         params.monochrome_logs,
         params.hook_url,
-        NFCORE_HPVSEQ.out.multiqc_report
+        HPVSEQ.out.multiqc_report
     )
 }
 

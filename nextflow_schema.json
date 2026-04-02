@@ -40,7 +40,26 @@
                     "type": "string",
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
-                }
+                },
+		"skip_fastqc": {
+		    "type": "boolean",
+		    "default": false,
+		    "description": "Skip FastQC processes"
+		},
+		"skip_multiqc": {
+		    "type": "boolean",
+		    "default": false,
+		    "description": "Skip MultiQC processes"
+		},
+		"blist": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/csv",
+                    "description": "Path to a UMI file with one column and each line ended with T for dual UMIs.",
+                    "help_text": "You will need to require the file from your provider of UMIs.",
+                    "fa_icon": "fas fa-file-alt"
+		}
             }
         },
         "reference_genome_options": {

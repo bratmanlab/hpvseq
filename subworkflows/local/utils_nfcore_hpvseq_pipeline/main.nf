@@ -33,6 +33,9 @@ workflow PIPELINE_INITIALISATION {
     nextflow_cli_args //   array: List of positional nextflow CLI args
     outdir            //  string: The output directory where the results will be saved
     input             //  string: Path to input samplesheet
+    skip_fastqc       // boolean: Skip fastqc
+    skip_multiqc      // boolean: Skip multiqc
+    blist             //  string: Path to UMI list
     help              // boolean: Display help message and exit
     help_full         // boolean: Show the full help message
     show_hidden       // boolean: Show hidden parameters in the help message
@@ -103,23 +106,25 @@ workflow PIPELINE_INITIALISATION {
 
     channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map {
-            meta, fastq_1, fastq_2 ->
-                if (!fastq_2) {
-                    return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
-                } else {
-                    return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
-                }
-        }
-        .groupTuple()
-        .map { samplesheet ->
-            validateInputSamplesheet(samplesheet)
-        }
-        .map {
-            meta, fastqs ->
-                return [ meta, fastqs.flatten() ]
-        }
+        .map { row ->
+	    def meta = row[0]
+	    
+	    // Scenario A: SRA Input (2 items: meta + sra_path)
+	    if (!row[1].endsWith('.gz')) {
+		def sra_path = row[1]
+		return [ meta + [ is_sra: true ], sra_path ]
+	    } 
+	    // Scenario B: FASTQ Input (3 items: meta + fq1 + fq2)
+	    else {
+		def fq1 = row[1]
+		def fq2 = row[2]
+		def single_end = fq2 ? false : true
+		return [ meta + [ is_sra: false, single_end: single_end ], [ fq1, fq2 ].findAll() ]
+	    }
+	}
         .set { ch_samplesheet }
+    // Check 
+    ch_samplesheet.view { meta, data -> "CHECKING INPUT: ID=${meta.id} SRA=${meta.is_sra} DATA=${data}" }
 
     emit:
     samplesheet = ch_samplesheet
