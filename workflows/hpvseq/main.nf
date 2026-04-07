@@ -8,11 +8,13 @@ include { REFORMAT_FASTQ         } from '../../modules/local/reformatfastq'
 include { FASTQC                 } from '../../modules/nf-core/fastqc'
 include { MULTIQC                } from '../../modules/nf-core/multiqc'
 include { TAGTOHEADER            } from '../../modules/local/tagtoheader'
-include { BWA_MEM                } from '../../modules/nf-core/bwa/mem'
+
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../../subworkflows/local/utils_nfcore_hpvseq_pipeline'
+
+include { ALIGN_BWA              } from '../../subworkflows/local/align_bwa'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -24,7 +26,6 @@ workflow HPVSEQ {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
-    genome         // string: genome read in from --genome 
     ch_bwa_index      // channel: path(bwa_index/) for alignment 
     ch_fasta       // channel: path(genome.fasta)
 
@@ -54,6 +55,7 @@ workflow HPVSEQ {
         ch_ncbi_settings,  // path ncbi_settings
         ch_certificate     // path certificate
     )
+
     //
     // MODULE: reformat fastq
     //
@@ -61,7 +63,7 @@ workflow HPVSEQ {
         SRATOOLS_FASTERQDUMP.out.reads
     )
     ch_all_fastqs = REFORMAT_FASTQ.out.reads.mix(ch_inputs.fastq).map { meta, r1, r2 -> [ meta, [r1, r2] ] }
- 
+
     //
     // MODULE: Run FastQC
     //
@@ -70,36 +72,6 @@ workflow HPVSEQ {
     )
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
-
-    //
-    // Collate and save software versions
-    //
-    def topic_versions = Channel.topic("versions")
-        .distinct()
-        .branch { entry ->
-            versions_file: entry instanceof Path
-            versions_tuple: true
-        }
-
-    def topic_versions_string = topic_versions.versions_tuple
-        .map { process, tool, version ->
-            [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
-        }
-        .groupTuple(by:0)
-        .map { process, tool_versions ->
-            tool_versions.unique().sort()
-            "${process}:\n${tool_versions.join('\n')}"
-        }
-
-    softwareVersionsToYAML(ch_versions.mix(topic_versions.versions_file))
-        .mix(topic_versions_string)
-        .collectFile(
-            storeDir: "${params.outdir}/pipeline_info",
-            name: 'nf_core_'  +  'hpvseq_software_'  + 'mqc_'  + 'versions.yml',
-            sort: true,
-            newLine: true
-        ).set { ch_collated_versions }
-
 
     //
     // MODULE: MultiQC
@@ -143,7 +115,7 @@ workflow HPVSEQ {
 
     emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
-
+ 
     //
     // MODULE: Run tag_to_header  
     //
@@ -155,13 +127,12 @@ workflow HPVSEQ {
     //
     // MODULE: Run bwa mem  
     //
-    BWA_MEM (
-        TAGTOHEADER.out,
-        [genome, bwa_index], 
-        [genome, fasta] 
+    ALIGN_BWA (
+        TAGTOHEADER.out.reads,
+        ch_bwa_index, 
+        ch_fasta.map { item -> [ [:], item ] }
     )
 }
-
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     THE END

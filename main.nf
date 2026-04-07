@@ -32,6 +32,8 @@ include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_hpvs
 params.fasta        = getGenomeAttribute('fasta')
 params.bwa_index    = getGenomeAttribute('bwa')
 
+ch_fasta            = channel.value(file(params.fasta, checkIfExists: true))
+ch_bwa_index        = channel.value(file(params.bwa_index, checkIfExists: true))
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     NAMED WORKFLOWS FOR PIPELINE
@@ -89,9 +91,8 @@ workflow {
     //
     HPVSEQ (
         PIPELINE_INITIALISATION.out.samplesheet,
-        params.genome,
-        params.bwa_index,
-        params.fasta 
+        ch_bwa_index,
+        ch_fasta 
     )
     //
     // SUBWORKFLOW: Run completion tasks
@@ -102,7 +103,7 @@ workflow {
         params.plaintext_email,
         params.outdir,
         params.monochrome_logs,
-        params.hook_url,
+        params.hook_url
         HPVSEQ.out.multiqc_report
     )
 }
