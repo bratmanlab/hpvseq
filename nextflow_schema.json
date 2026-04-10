@@ -41,17 +41,15 @@
                     "description": "MultiQC report title. Printed as page header, used for filename if not otherwise specified.",
                     "fa_icon": "fas fa-file-signature"
                 },
-		"skip_fastqc": {
-		    "type": "boolean",
-		    "default": false,
-		    "description": "Skip FastQC processes"
-		},
-		"skip_multiqc": {
-		    "type": "boolean",
-		    "default": false,
-		    "description": "Skip MultiQC processes"
-		},
-		"blist": {
+                "skip_fastqc": {
+                    "type": "boolean",
+                    "description": "Skip FastQC processes"
+                },
+                "skip_multiqc": {
+                    "type": "boolean",
+                    "description": "Skip MultiQC processes"
+                },
+                "blist": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
@@ -59,7 +57,7 @@
                     "description": "Path to a UMI file with one column and each line ended with T for dual UMIs.",
                     "help_text": "You will need to require the file from your provider of UMIs.",
                     "fa_icon": "fas fa-file-alt"
-		}
+                }
             }
         },
         "reference_genome_options": {
@@ -96,8 +94,7 @@
                     "format": "directory-path",
                     "description": "The base path to the igenomes reference files",
                     "fa_icon": "fas fa-ban",
-                    "hidden": true,
-                    "default": "s3://ngi-igenomes/igenomes/"
+                    "hidden": true
                 }
             }
         },
@@ -272,5 +269,34 @@
         {
             "$ref": "#/$defs/generic_options"
         }
-    ]
+    ],
+    "properties": {
+        "bwa_index": {
+            "type": "string"
+        },
+        "dbsnp": {
+            "type": "string"
+        },
+        "dbsnp_tbi": {
+            "type": "string"
+        },
+        "indels": {
+            "type": "string"
+        },
+        "indels_tbi": {
+            "type": "string"
+        },
+        "bed": {
+            "type": "string"
+        },
+        "ref_path": {
+            "type": "string"
+        },
+        "fai": {
+            "type": "string"
+        },
+        "dict": {
+            "type": "string"
+        }
+    }
 }

@@ -36,6 +36,8 @@ workflow PIPELINE_INITIALISATION {
     skip_fastqc       // boolean: Skip fastqc
     skip_multiqc      // boolean: Skip multiqc
     blist             //  string: Path to UMI list
+    genome            //  string: genome id
+    bed               //  string: Path to panel bed file 
     help              // boolean: Display help message and exit
     help_full         // boolean: Show the full help message
     show_hidden       // boolean: Show hidden parameters in the help message

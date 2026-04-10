@@ -60,9 +60,9 @@ Now, you can run the pipeline using:
 
 ```bash
 nextflow run bratmanlab/hpvseq \
-   -profile <docker/singularity/.../institute> \
-   --input samplesheet.csv \
-   --outdir <OUTDIR>
+   -profile <hpc/../docker/singularity/.../institute> \
+   -c hpcgenomes.config \
+   -params-file cohort.yml ## input, outdir, ...
 ```
 
 > [!WARNING]

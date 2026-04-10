@@ -8,6 +8,8 @@ include { REFORMAT_FASTQ         } from '../../modules/local/reformatfastq'
 include { FASTQC                 } from '../../modules/nf-core/fastqc'
 include { MULTIQC                } from '../../modules/nf-core/multiqc'
 include { TAGTOHEADER            } from '../../modules/local/tagtoheader'
+include { GATK4_BASERECALIBRATOR } from '../../modules/nf-core/gatk4/baserecalibrator'
+include { GATK4_APPLYBQSR        } from '../../modules/nf-core/gatk4/applybqsr'
 
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -15,6 +17,7 @@ include { softwareVersionsToYAML } from '../../subworkflows/nf-core/utils_nfcore
 include { methodsDescriptionText } from '../../subworkflows/local/utils_nfcore_hpvseq_pipeline'
 
 include { ALIGN_BWA              } from '../../subworkflows/local/align_bwa'
+include { GATK4_BQSR             } from '../../subworkflows/local/gatk4_bqsr'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,14 +28,20 @@ include { ALIGN_BWA              } from '../../subworkflows/local/align_bwa'
 workflow HPVSEQ {
 
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
-    ch_bwa_index      // channel: path(bwa_index/) for alignment 
-    ch_fasta       // channel: path(genome.fasta)
+    ch_samplesheet       // channel: samplesheet read in from --input
+    ch_bwa_index         // channel: path(bwa_index/) for alignment 
+    genome               // string: reference genome name, e.g. hg19 
+    ch_fasta             // channel: path(genome.fasta)
+    ch_fai               // channel: path(genome.fai)
+    ch_dict              // channel: path(genome.dict)
+    ch_bed               // channel: path(bed)
+    ch_known_sites       // channel: path(known_sites)
+    ch_known_sites_tbi   // channel: path(known_sites_tbi)
 
     main:
 
     ch_versions = channel.empty()
-    ch_multiqc_files = channel.empty()
+   // ch_multiqc_files = channel.empty()
 
     ch_samplesheet
         .branch {
@@ -63,59 +72,7 @@ workflow HPVSEQ {
         SRATOOLS_FASTERQDUMP.out.reads
     )
     ch_all_fastqs = REFORMAT_FASTQ.out.reads.mix(ch_inputs.fastq).map { meta, r1, r2 -> [ meta, [r1, r2] ] }
-
-    //
-    // MODULE: Run FastQC
-    //
-    FASTQC (
-        ch_samplesheet
-    )
-    ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
-    ch_versions = ch_versions.mix(FASTQC.out.versions.first())
-
-    //
-    // MODULE: MultiQC
-    //
-    ch_multiqc_config        = channel.fromPath(
-        "$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-    ch_multiqc_custom_config = params.multiqc_config ?
-        channel.fromPath(params.multiqc_config, checkIfExists: true) :
-        channel.empty()
-    ch_multiqc_logo          = params.multiqc_logo ?
-        channel.fromPath(params.multiqc_logo, checkIfExists: true) :
-        channel.empty()
-
-    summary_params      = paramsSummaryMap(
-        workflow, parameters_schema: "nextflow_schema.json")
-    ch_workflow_summary = channel.value(paramsSummaryMultiqc(summary_params))
-    ch_multiqc_files = ch_multiqc_files.mix(
-        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_custom_methods_description = params.multiqc_methods_description ?
-        file(params.multiqc_methods_description, checkIfExists: true) :
-        file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-    ch_methods_description                = channel.value(
-        methodsDescriptionText(ch_multiqc_custom_methods_description))
-
-    ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)
-    ch_multiqc_files = ch_multiqc_files.mix(
-        ch_methods_description.collectFile(
-            name: 'methods_description_mqc.yaml',
-            sort: true
-        )
-    )
-
-    MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList(),
-        [],
-        []
-    )
-
-    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
- 
+    
     //
     // MODULE: Run tag_to_header  
     //
@@ -123,15 +80,44 @@ workflow HPVSEQ {
         ch_all_fastqs,
         ch_blist
     )
-   
+    ch_tag2header_reads = TAGTOHEADER.out 
+    .map { meta, r1, r2 -> [ meta, [r1, r2 ] ] }
+ 
     //
     // MODULE: Run bwa mem  
     //
+/*
+    ch_fasta_fai = ch_fasta.map { fasta ->
+        def fai = "${fasta}.fai" // Concatenates and turns it into a File object
+        return [ [id: genome], file(fasta), file(fai) ]
+    }
+*/
+    ch_fasta_fai          = ch_fasta.join(ch_fai)
     ALIGN_BWA (
-        TAGTOHEADER.out.reads,
+        ch_tag2header_reads,
         ch_bwa_index, 
-        ch_fasta.map { item -> [ [:], item ] }
+        ch_fasta_fai
     )
+
+    //
+    // MODULE: Run gatk4 baserecalibrator  
+    //
+
+    ch_bqsr = ALIGN_BWA.out.bam
+        .join(ALIGN_BWA.out.bai)
+        .combine(ch_bed)
+    GATK4_BQSR (
+        ch_bqsr,
+        ch_fasta,
+        ch_fai,
+        ch_dict,
+        ch_known_sites,
+        ch_known_sites_tbi
+    )
+    emit:
+    bam            = GATK4_BQSR.out.bam
+    bai            = GATK4_BQSR.out.bai
+    multiqc_report = "Later"
 }
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

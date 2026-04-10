@@ -24,8 +24,8 @@ def getBwaPercentMapped(align_flagstat) {
 workflow ALIGN_BWA {
     take:
     reads         // channel: [ val(meta), [ reads ] ]
-    index         // channel: /path/to/bwa/index/
-    fasta         // channel: /path/to/fasta
+    index         // channel: /path/to/bwa/index/ ?
+    fasta         // channel: [ val(meta), path(fasta), path(fai) ]
 
     main:
 
