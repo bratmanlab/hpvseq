@@ -76,6 +76,47 @@ To see the results of an example test run with a full size dataset refer to the 
 For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/hpvseq/output).
 
+. 
+├── fastq or SRA?
+├── Pre-QC
+│   └── Trim read length?
+├── QC
+│   ├── FastqQC
+│   └── MultiQC
+│       └── [ Report: QC Sequencing ]
+├── Alignment to human genome
+│   ├── [ Report: QC depth ]
+│   ├── Dedup
+│   │   └── SMaSh
+│   │       └── [ Report: Sample swap ]
+│   ├── Unmapped reads 
+│   └── GATK BQSR 
+│       └── ConsensusCruncher
+│           ├── dcs_SC: all.unique.dcs
+│           │   └── [ Report: Quantification depth ] 
+│           ├── [ Report: Saturation rate ] 
+│           └── [ Report: QC depth ]
+├── Genotyping by aligning hg-unmapped reads to 38 HPV genomes
+│   └── ConsensusCruncher
+│       └── dcs_SC: all.unique.dcs
+│           └── [ Report: detected genotypes ]
+└── Quantification on dominant genotype
+    └── Alignment of hg-unmapped reads to the given genotype
+        └── ConsensusCruncher
+            ├── dcs_SC
+            │   └── [ Report: Quantification depth ]
+            ├── [ Report: Saturation rate ]
+            └── [ Report: QC depth ] 
+
+.
+└── Quantitfication on baseline-corrected genotype
+    └──Alignment of hg-unmapped reads to the given genotype
+        └── ConsensusCruncher
+            ├── dcs_SC
+            │   └── [ Report: Quantification depth ]
+            ├── [ Report: Saturation rate ]
+            └── [ Report: QC depth ]
+
 ## Credits
 
 bratmanlab/hpvseq was originally written by Jinfeng Zou.
