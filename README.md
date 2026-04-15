@@ -76,13 +76,13 @@ To see the results of an example test run with a full size dataset refer to the 
 For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/hpvseq/output).
 
-. 
+.   
 ├── fastq or SRA?  
 ├── Pre-QC  
-│   └── Trim read length?
-├── QC
-│   ├── FastqQC
-│   └── MultiQC
+│   └── Trim read length?  
+├── QC  
+│   ├── FastqQC  
+│   └── MultiQC  
 │       └── [ Report: QC Sequencing ]
 ├── Alignment to human genome
 │   ├── [ Report: QC depth ]
