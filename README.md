@@ -76,6 +76,7 @@ To see the results of an example test run with a full size dataset refer to the 
 For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/hpvseq/output).
 
+```text
 .
 ├── fastq or SRA?
 └── Pre-QC
@@ -121,6 +122,7 @@ For more details about the output files and reports, please refer to the
             │   └── [ Report: Quantification depth ]
             ├── [ Report: Saturation rate ]
             └── [ Report: QC depth ]
+```
 
 ## Credits
 
