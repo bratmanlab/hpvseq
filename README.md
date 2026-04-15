@@ -77,8 +77,8 @@ For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/hpvseq/output).
 
 . 
-├── fastq or SRA?
-├── Pre-QC
+├── fastq or SRA?  
+├── Pre-QC  
 │   └── Trim read length?
 ├── QC
 │   ├── FastqQC
