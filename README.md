@@ -87,7 +87,7 @@ For more details about the output files and reports, please refer to the
 │       └── [ Report: QC Sequencing ]
 ├── Alignment to human genome ✅
 │   ├── [ Report: QC depth ]
-│   ├── [ Report: QC depth ]
+│   ├── [ Report: on-target rate ]
 │   ├── Dedup
 │   │   └── SMaSh
 │   │       └── [ Report: Sample swap ]
