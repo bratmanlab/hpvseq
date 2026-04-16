@@ -21,7 +21,7 @@
 
 ## Introduction
 
-**bratmanlab/hpvseq** is a bioinformatics pipeline that ...
+**bratmanlab/hpvseq** is a bioinformatics pipeline that detects HPV DNAs, identifies HPV genotype and evaluates the quantification on **dual-UMIs** and **paired-end** barcoding sequencing data by demultiplexing method of ConsensusCruncher (https://github.com/pughlab/ConsensusCruncher). ...
 
 <!-- TODO bratmanlab:
    Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
@@ -77,28 +77,23 @@ For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/hpvseq/output).
 
 ```text
-.
-├── fastq or SRA?
-└── Pre-QC
-    └── Trim read length?
-
 .   
-├── fastq or SRA?  
+├── fastq or SRA? :white_check_mark:  
 ├── Pre-QC  
 │   └── Trim read length?  
 ├── QC  
 │   ├── FastqQC  
 │   └── MultiQC  
 │       └── [ Report: QC Sequencing ]
-├── Alignment to human genome
+├── Alignment to human genome :white_check_mark:
 │   ├── [ Report: QC depth ]
 │   ├── Dedup
 │   │   └── SMaSh
 │   │       └── [ Report: Sample swap ]
-│   ├── Unmapped reads 
-│   └── GATK BQSR 
-│       └── ConsensusCruncher
+│   └── GATK BQSR :white_check_mark: 
+│       └── ConsensusCruncher :white_check_mark:
 │           ├── dcs_SC: all.unique.dcs
+│           │   ├── [ Report: Variants ]
 │           │   └── [ Report: Quantification depth ] 
 │           ├── [ Report: Saturation rate ] 
 │           └── [ Report: QC depth ]
@@ -106,19 +101,21 @@ For more details about the output files and reports, please refer to the
 │   └── ConsensusCruncher
 │       └── dcs_SC: all.unique.dcs
 │           └── [ Report: detected genotypes ]
-└── Quantification on dominant genotype
+└── Quantification preparation on dominant genotype
     └── Alignment of hg-unmapped reads to the given genotype
         └── ConsensusCruncher
             ├── dcs_SC
+            │   ├── [ Report: Variants ]
             │   └── [ Report: Quantification depth ]
             ├── [ Report: Saturation rate ]
             └── [ Report: QC depth ] 
 
 .
-└── Quantitfication on baseline-corrected genotype
+└── Quantitfication preparation on baseline-corrected genotype
     └──Alignment of hg-unmapped reads to the given genotype
         └── ConsensusCruncher
             ├── dcs_SC
+            │   ├── [ Report: Variants ]
             │   └── [ Report: Quantification depth ]
             ├── [ Report: Saturation rate ]
             └── [ Report: QC depth ]
