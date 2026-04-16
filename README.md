@@ -85,13 +85,14 @@ For more details about the output files and reports, please refer to the
 │   ├── FastqQC  
 │   └── MultiQC  
 │       └── [ Report: QC Sequencing ]
-├── Alignment to human genome &check;
+├── Alignment to human genome ✅
+│   ├── [ Report: QC depth ]
 │   ├── [ Report: QC depth ]
 │   ├── Dedup
 │   │   └── SMaSh
 │   │       └── [ Report: Sample swap ]
-│   └── GATK BQSR :white_check_mark: 
-│       └── ConsensusCruncher :white_check_mark:
+│   └── GATK BQSR ✅ 
+│       └── ConsensusCruncher ✅
 │           ├── dcs_SC: all.unique.dcs
 │           │   ├── [ Report: Variants ]
 │           │   └── [ Report: Quantification depth ] 
