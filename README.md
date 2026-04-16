@@ -78,14 +78,14 @@ For more details about the output files and reports, please refer to the
 
 ```text
 .   
-├── fastq or SRA? :white_check_mark:  
+├── fastq or SRA? ✅  
 ├── Pre-QC  
 │   └── Trim read length?  
 ├── QC  
 │   ├── FastqQC  
 │   └── MultiQC  
 │       └── [ Report: QC Sequencing ]
-├── Alignment to human genome :white_check_mark:
+├── Alignment to human genome &check;
 │   ├── [ Report: QC depth ]
 │   ├── Dedup
 │   │   └── SMaSh
