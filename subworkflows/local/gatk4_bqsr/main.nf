@@ -4,7 +4,8 @@
 
 include { GATK4_BASERECALIBRATOR  } from '../../../modules/nf-core/gatk4/baserecalibrator'
 include { GATK4_APPLYBQSR         } from '../../../modules/nf-core/gatk4/applybqsr'
-include { BAM_SORT_STATS_SAMTOOLS } from '../../nf-core/bam_sort_stats_samtools'
+include { SAMTOOLS_SORT as SORT_BQSR } from '../../../modules/nf-core/samtools/sort'
+include { SAMTOOLS_INDEX          } from '../../../modules/nf-core/samtools/index'
 
 workflow GATK4_BQSR {
     take:
@@ -49,15 +50,23 @@ workflow GATK4_BQSR {
     )
 
     //
-    // Sort, index BAM file and run samtools stats, flagstat and idxstats
+    // Sort, index BAM file 
     //
     ch_fasta_fai = fasta.join(fai)
-    BAM_SORT_STATS_SAMTOOLS(GATK4_APPLYBQSR.out.bam, ch_fasta_fai)
-    ch_flagstat = BAM_SORT_STATS_SAMTOOLS.out.flagstat
+    //BAM_SORT_STATS_SAMTOOLS_BQSR(GATK4_APPLYBQSR.out.bam, ch_fasta_fai)
+    SORT_BQSR(
+        GATK4_APPLYBQSR.out.bam, 
+        GATK4_APPLYBQSR.out.bam
+        .combine(ch_fasta_fai)
+        .map { meta_id, bam, meta_genome, fasta, fai ->
+            [ meta_id, fasta, fai ]
+        },
+        ''
+    )
+    ch_bam_bqsr = SORT_BQSR.out.bam
+    SAMTOOLS_INDEX(ch_bam_bqsr)
 
     emit:
-    bam            = BAM_SORT_STATS_SAMTOOLS.out.bam      // channel: [ val(meta), [ bam ] ]
-    bai            = BAM_SORT_STATS_SAMTOOLS.out.index      // channel: [ val(meta), [ bai ] ]
-    stats          = BAM_SORT_STATS_SAMTOOLS.out.stats    // channel: [ val(meta), [ stats ] ]
-    flagstat       = BAM_SORT_STATS_SAMTOOLS.out.flagstat // channel: [ val(meta), [ flagstat ] ]
+    bam            = ch_bam_bqsr      // channel: [ val(meta), [ bam ] ]
+    bai            = SAMTOOLS_INDEX.out.index      // channel: [ val(meta), [ bai ] ]
 }

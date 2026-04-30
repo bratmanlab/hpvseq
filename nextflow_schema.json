@@ -297,6 +297,34 @@
         },
         "dict": {
             "type": "string"
+        },
+        "sequencing_platform": {
+            "type": "string"
+        },
+        "consensuscruncher_dir": {
+            "type": "string"
+        },
+        "samtools_path": {
+            "type": "string"
+        },
+        "genome_genotyping": {
+            "type": "string"
+        },
+        "mapq": {
+            "type": "integer",
+            "default": 30
+        },
+        "genotypes": {
+            "type": "string"
+        },
+        "ref_path_virus": {
+            "type": "string"
+        },
+        "bait_intervals": {
+            "type": "string"
+        },
+        "target_intervals": {
+            "type": "string"
         }
     }
 }

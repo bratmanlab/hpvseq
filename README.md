@@ -79,47 +79,53 @@ For more details about the output files and reports, please refer to the
 ```text
 .   
 ├── fastq or SRA? ✅  
-├── Pre-QC  
-│   └── Trim read length?  
-├── QC  
-│   ├── FastqQC  
-│   └── MultiQC  
-│       └── [ Report: QC Sequencing ]
-├── Alignment to human genome ✅
-│   ├── [ Report: QC depth ]
-│   ├── [ Report: on-target rate ]
+├── Pre-QC ❓
+│   └── Sample index error rate matched? ❓ 
+├── QC
+│   ├── FastqQC 
+│   └── MultiQC
+│       └── [ Report: QC Sequencing ] ✅
+├── Post-QC ❓
+│   ├── Trim read length? ❓ 
+│   └── Merge fastq files? ❓ 
+├── Alignment to human genome
+│   ├── [ Report: QC coverage ] ✅
+│   ├── [ Report: on-target rate ] ✅
 │   ├── Dedup
-│   │   └── SMaSh
-│   │       └── [ Report: Sample swap ]
-│   └── GATK BQSR ✅ 
-│       └── ConsensusCruncher ✅
-│           ├── dcs_SC: all.unique.dcs
-│           │   ├── [ Report: Variants ]
-│           │   └── [ Report: Quantification depth ] 
-│           ├── [ Report: Saturation rate ] 
-│           └── [ Report: QC depth ]
+│   │   └── SMaSh
+│   │       └── [ Report: Sample swap ] ❓
+│   └── GATK BQSR  
+│       └── ConsensusCruncher 
+│           ├── dcs_sc: dcs.sc
+│           │   └── [ Report: Variant calls ] ❓
+│           ├── dcs_sc: all.unique.dcs
+│           │   └── [ Report: Variants VAF ] ❓
+│           ├── [ Report: Saturation rate ]  ✅
+│           └── [ Report: QC depth ] ✅
 ├── Genotyping by aligning hg-unmapped reads to 38 HPV genomes
-│   └── ConsensusCruncher
-│       └── dcs_SC: all.unique.dcs
-│           └── [ Report: detected genotypes ]
+│   └── ConsensusCruncher 
+│       └── dcs_sc: all.unique.dcs
+│           └── [ Report: detected genotypes ] ✅
 └── Quantification preparation on dominant genotype
-    └── Alignment of hg-unmapped reads to the given genotype
-        └── ConsensusCruncher
-            ├── dcs_SC
-            │   ├── [ Report: Variants ]
-            │   └── [ Report: Quantification depth ]
-            ├── [ Report: Saturation rate ]
-            └── [ Report: QC depth ] 
+    └── Alignment of hg-unmapped reads to the given genotype 
+        └── ConsensusCruncher 
+            ├── dcs_sc: dcs.sc
+            │   └── [ Report: Variant calls ] ❓
+            ├── dcs_sc: all.unique.dcs
+            │   └── [ Report: Variants VAF ] ❓
+            ├── [ Report: Saturation rate ] ✅
+            └── [ Report: Qantification coverage ] ✅ 
 
-.
+. ❓
 └── Quantitfication preparation on baseline-corrected genotype
     └──Alignment of hg-unmapped reads to the given genotype
         └── ConsensusCruncher
-            ├── dcs_SC
-            │   ├── [ Report: Variants ]
-            │   └── [ Report: Quantification depth ]
-            ├── [ Report: Saturation rate ]
-            └── [ Report: QC depth ]
+            ├── dcs_sc: dcs.sc
+            │   └── [ Report: Variant calls ] ❓
+            ├── dcs_sc: all.unique.dcs
+            │   └── [ Report: Variants VAF ] ❓
+            ├── [ Report: Saturation rate ] ❓
+            └── [ Report: Quantification coverage ] ❓
 ```
 
 ## Credits

@@ -43,7 +43,15 @@ workflow ALIGN_BWA {
     //
     // Sort, index BAM file and run samtools stats, flagstat and idxstats
     //
-    BAM_SORT_STATS_SAMTOOLS(ch_orig_bam, fasta)
+    //BAM_SORT_STATS_SAMTOOLS(ch_orig_bam, fasta)
+    BAM_SORT_STATS_SAMTOOLS(
+        ch_orig_bam, 
+        ch_orig_bam
+        .combine(fasta)
+        .map { meta_id, bam, meta_genome, fasta, fai ->
+            [ meta_id, fasta, fai]
+        }.first() 
+    ) 
     ch_flagstat = BAM_SORT_STATS_SAMTOOLS.out.flagstat
 
     //
@@ -52,7 +60,7 @@ workflow ALIGN_BWA {
     ch_percent_mapped = ch_flagstat.map { meta, log_file -> [ meta, getBwaPercentMapped(log_file) ] }
 
     emit:
-    orig_bam       = ch_orig_bam                          // channel: [ val(meta), bam ]
+//    orig_bam       = ch_orig_bam                          // channel: [ val(meta), bam ]
     bam            = BAM_SORT_STATS_SAMTOOLS.out.bam      // channel: [ val(meta), [ bam ] ]
     bai            = BAM_SORT_STATS_SAMTOOLS.out.index      // channel: [ val(meta), [ bai ] ]
     stats          = BAM_SORT_STATS_SAMTOOLS.out.stats    // channel: [ val(meta), [ stats ] ]

@@ -32,7 +32,7 @@ include { getGenomeAttribute      } from './subworkflows/local/utils_nfcore_hpvs
 params.fasta        = getGenomeAttribute('fasta')
 params.fai          = getGenomeAttribute('fai')
 params.dict         = getGenomeAttribute('dict')
-params.bwa_index    = getGenomeAttribute('bwa')
+params.bwa_index    = getGenomeAttribute('bwa_index')
 params.dbsnp        = getGenomeAttribute('dbsnp')
 params.dbsnp_tbi    = getGenomeAttribute('dbsnp_tbi')
 params.indels       = getGenomeAttribute('indels')
@@ -88,6 +88,9 @@ workflow {
         params.blist,
         params.genome,
         params.bed,
+        params.sequencing_platform,
+        params.consensuscruncher_dir,
+        params.genome_genotyping,
         params.help,
         params.help_full,
         params.show_hidden
@@ -96,7 +99,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
-
+    // Human genome
     file_fasta            = file(params.fasta, checkIfExists: true)
     file_fai              = file(params.fai, checkIfExists: true)
     file_dict             = file(params.dict, checkIfExists: true)
@@ -104,17 +107,36 @@ workflow {
     ch_fai                = channel.value([ [id: params.genome], file_fai ])
     ch_dict               = channel.value([ [id: params.genome], file_dict ])
     ch_bwa_index          = channel.value(file(params.bwa_index, checkIfExists: true))
-    ch_bed                = channel.value(file(params.bed, checkIfExists: true))
+    ch_bed                = channel.value([ [id: params.genome], file(params.bed, checkIfExists: true) ])
+    // Virus genome
+    file_genotyping_fasta = file(params.genomes[params.genome_genotyping].fasta, checkIfExists: true)
+    file_genotyping_fai   = file(params.genomes[params.genome_genotyping].fai, checkIfExists: true)
+    def file_genotyping_cytoband = params.genomes[params.genome_genotyping].bwa_index + params.genome_genotyping + ".cytoband"
+    ch_genotyping_fasta   = channel.value([ [id: params.genome_genotyping], file_genotyping_fasta ])
+    ch_genotyping_fai     = channel.value([ [id: params.genome_genotyping], file_genotyping_fai ])
+    ch_genotyping_cytoband     = channel.value([ [id: params.genome_genotyping], file(file_genotyping_cytoband, checkIfExists: true) ])
+    ch_genotyping_index   = channel.value(file(params.genomes[params.genome_genotyping].bwa_index, checkIfExists: true))
+    ch_genotypes   = channel.value([ [id: "genotypes"], file(params.genotypes, checkIfExists: true) ])
+/*
+    ch_genotyping_cytoband.view { meta, path -> 
+        """
+        Genome ID: ${meta.id}
+        Cytoband path: ${path}
+        """
+    }
+*/ 
 /*
     // USE THIS INSTEAD TO LOCATE THE NULL:
     def check_params = [
-        "fasta": params.fasta,
-        "fai": params.fai,
-        "dct": params.dict,
-        "dbsnp": params.dbsnp,
-        "indels": params.indels,
-        "genome": params.genome,
-        "bed": params.bed
+        "fasta"                : params.fasta,
+        "fai"                  : params.fai,
+        "dct"                  : params.dict,
+        "dbsnp"                : params.dbsnp,
+        "indels"               : params.indels,
+        "genome"               : params.genome,
+        "bed"                  : params.bed
+        "sequencing_platform"  : params.sequencing_platform
+        "params.consensuscruncher_dir"  : params.consensuscruncher_dir
     ]
 
     check_params.each { name, value ->
@@ -125,9 +147,6 @@ workflow {
         }
     }
 
-    println "DEBUG: dbsnp is [${params.dbsnp}]"
-    println "DEBUG: indels is [${params.indels}]"
-    println "DEBUG: genome is [${params.genome}]"
 */
 
     def vcf_paths = [params.dbsnp] + (params.indels ? params.indels.split(',') : []).flatten()
@@ -148,8 +167,15 @@ workflow {
         ch_fai,
         ch_dict,
         ch_bed,
+        params.sequencing_platform,
+        params.consensuscruncher_dir,
         ch_known_sites,
-        ch_known_sites_tbi
+        ch_known_sites_tbi,
+        ch_genotyping_index,
+        ch_genotyping_fasta,
+        ch_genotyping_fai,
+        ch_genotyping_cytoband,
+        ch_genotypes
     )
     //
     // SUBWORKFLOW: Run completion tasks
