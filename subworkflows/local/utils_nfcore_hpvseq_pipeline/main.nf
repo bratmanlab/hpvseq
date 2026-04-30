@@ -27,20 +27,23 @@ include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipelin
 workflow PIPELINE_INITIALISATION {
 
     take:
-    version           // boolean: Display version and exit
-    validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
-    monochrome_logs   // boolean: Do not use coloured log outputs
-    nextflow_cli_args //   array: List of positional nextflow CLI args
-    outdir            //  string: The output directory where the results will be saved
-    input             //  string: Path to input samplesheet
-    skip_fastqc       // boolean: Skip fastqc
-    skip_multiqc      // boolean: Skip multiqc
-    blist             //  string: Path to UMI list
-    genome            //  string: genome id
-    bed               //  string: Path to panel bed file 
-    help              // boolean: Display help message and exit
-    help_full         // boolean: Show the full help message
-    show_hidden       // boolean: Show hidden parameters in the help message
+    version             // boolean: Display version and exit
+    validate_params     // boolean: Boolean whether to validate parameters against the schema at runtime
+    monochrome_logs     // boolean: Do not use coloured log outputs
+    nextflow_cli_args   //   array: List of positional nextflow CLI args
+    outdir              //  string: The output directory where the results will be saved
+    input               //  string: Path to input samplesheet
+    skip_fastqc         // boolean: Skip fastqc
+    skip_multiqc        // boolean: Skip multiqc
+    blist               //  string: Path to UMI list
+    genome              //  string: Genome id
+    bed                 //  string: Path to panel bed file
+    sequencing_platform //  string: Sequencing platform 
+    consensuscruncher_dir //string: Path to ConsensusCruncher 
+    genome_genotyping   //  string: Genome for genotyping 
+    help                // boolean: Display help message and exit
+    help_full           // boolean: Show the full help message
+    show_hidden         // boolean: Show hidden parameters in the help message
 
     main:
 
