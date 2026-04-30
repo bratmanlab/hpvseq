@@ -1,0 +1,36 @@
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##     bratmanlab/hpvseq 1.0.0dev
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+input: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/PRJNA1249105/sra/sample_sheet.csv"
+outdir: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/PRJNA1249105/results"
+
+# Pre-QC
+index_error_rate: 0
+
+# QC
+skip_fastqc: false
+skip_multiqc: false
+
+# Post-QC
+read_length_trim: false
+
+# Preparation 
+blist: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/PRJNA1249105/KAPA_UMIs.txt"
+
+# Reference genome and cytoband for ConsensusCruncher (i.e. hg19 | hg38)
+sequencing_platform: "Illumina"
+genome: "hg19"
+ref_path: "/cluster/tools/data/genomes/human"
+bed: "/cluster/projects/scottgroup/people/jinfeng/data/bait_target_bed/HPV/Human4_STK11onHuman3_30SNPs.bed" 
+bait_intervals: "/cluster/projects/scottgroup/people/jinfeng/data/bait_target_bed/HPV/Human4_STK11onHuman3_30SNPs.interval_list"
+target_intervals: "/cluster/projects/scottgroup/people/jinfeng/data/bait_target_bed/HPV/Human4_STK11onHuman3_30SNPs.interval_list"
+ 
+# Tools
+consensuscruncher_dir: "/cluster/home/jfzou/ConsensusCruncher3" 
+samtools_path: "/cluster/tools/software/rocky9/samtools/1.20/bin/samtools"
+
+# Reference genome for virus: each virus genome files in an directory in ref_path_virus
+genome_genotyping: "HPV_38genomes"
+ref_path_virus: "/cluster/projects/scottgroup/people/jinfeng/data/HPVs"
+genotypes: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/data/HPV_38genomes.ref.txt" 
