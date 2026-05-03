@@ -6,11 +6,15 @@ input: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/PRJNA1249105/sra/sam
 outdir: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/PRJNA1249105/results"
 
 # Pre-QC
-index_error_rate: 0
+index_mismatch: 0
+index: "" 
 
 # QC
 skip_fastqc: false
 skip_multiqc: false
+
+# Post-QC
+skip_trim_read: true
 
 # Post-QC
 read_length_trim: false
