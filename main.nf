@@ -99,6 +99,7 @@ workflow {
     //
     // WORKFLOW: Run main workflow
     //
+    ch_index              = channel.value( file(params.index, checkIfExists: true) ) 
     // Human genome
     file_fasta            = file(params.fasta, checkIfExists: true)
     file_fai              = file(params.fai, checkIfExists: true)
@@ -161,6 +162,7 @@ workflow {
 
     HPVSEQ (
         PIPELINE_INITIALISATION.out.samplesheet,
+        ch_index,
         ch_bwa_index,
         params.genome,
         ch_fasta,

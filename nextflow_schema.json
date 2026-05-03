@@ -325,6 +325,30 @@
         },
         "target_intervals": {
             "type": "string"
+        },
+        "index_mismatch": {
+            "type": "integer"
+        },
+        "index": {
+            "type": "string"
+        },
+        "skip_trim_read": {
+            "type": "boolean",
+            "default": true
+        },
+        "smash": {
+            "type": "string"
+        },
+        "key_pool": {
+            "type": "boolean",
+	    "description": "Pool name is needed for getting timepoint"
+        },
+        "pool_delim": {
+            "type": "string"
+        },
+        "library": {
+            "type": "string",
+	    "description": "containing optional pool name, i7, i5, timepoint"
         }
     }
 }

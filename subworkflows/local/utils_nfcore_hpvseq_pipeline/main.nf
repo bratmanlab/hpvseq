@@ -108,7 +108,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Create channel from input file provided through params.input
     //
-
+/*
     channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
         .map { row ->
@@ -128,8 +128,41 @@ workflow PIPELINE_INITIALISATION {
 	    }
 	}
         .set { ch_samplesheet }
+*/
+    channel
+        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+        .map { row ->
+            /*
+            // 1. Print the whole thing to see the structure
+            println "DEBUG: Full row content: ${row}"
+        
+            // 2. Try to print index 1 (only works if it's a List)
+            try {
+                println "DEBUG: row[1] value: ${row[1]}"
+            } catch (Exception e) {
+                println "DEBUG: row[1] failed - row is likely a Map, not a List"
+            }
+            */
+
+	    def meta = row[0]
+	    def sra  = row[1]
+	    def lane = row[2]
+	    def fq1  = row[3]
+	    def fq2  = row[4]
+	    
+	    // Scenario A: SRA Input (2 items: meta + sra_path)
+	    if (sra) {
+		return [ meta + [ is_sra: true ], sra ]
+	    } 
+	    // Scenario B: FASTQ Input (3 items: meta + fq1 + fq2)
+	    else {
+		def single_end = fq2 ? false : true
+		return [ meta + [ is_sra: false, lane: lane, single_end: single_end ], *[ fq1, fq2 ].findAll() ]
+	    }
+	}
+        .set { ch_samplesheet }
     // Check 
-    ch_samplesheet.view { meta, data -> "CHECKING INPUT: ID=${meta.id} SRA=${meta.is_sra} DATA=${data}" }
+    //ch_samplesheet.view { meta, fq1, fq2 -> "CHECKING INPUT: ID=${meta.id} SRA=${meta.is_sra} DATA=${fq1},${fq2}" }
 
     emit:
     samplesheet = ch_samplesheet

@@ -4,6 +4,10 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 include { SRATOOLS_FASTERQDUMP   } from '../../modules/nf-core/sratools/fasterqdump'
+include { INDEX_MISMATCH         } from '../../modules/local/index_mismatch'
+include { META_TIMEPOINT         } from '../../modules/local/meta_timepoint'
+include { CAT_FASTQ              } from '../../modules/nf-core/cat/fastq'
+include { FASTP                  } from '../../modules/nf-core/fastp'
 include { REFORMAT_FASTQ         } from '../../modules/local/reformatfastq'
 include { FASTQC                 } from '../../modules/nf-core/fastqc'
 include { MULTIQC                } from '../../modules/nf-core/multiqc'
@@ -33,6 +37,7 @@ include { GENOTYPING             } from '../../subworkflows/local/genotyping'
 include { QUANTIFICATION         } from '../../subworkflows/local/quantification'
 include { COVERAGE_QUANTIFICATION_F2 as COVERAGE_QUANTIFICATION_HG    } from '../../subworkflows/local/coverage_quantification_f2'
 include { COVERAGE_QUANTIFICATION_F2 as COVERAGE_QUANTIFICATION_VIRUS } from '../../subworkflows/local/coverage_quantification_f2'
+include { CHECKMATE              } from '../../subworkflows/local/checkmate'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -44,6 +49,7 @@ workflow HPVSEQ {
 
     take:
     ch_samplesheet       // channel: samplesheet read in from --input
+    ch_index             // channel: path(i7_i5 index)
     ch_bwa_index         // channel: path(bwa_index/) for alignment 
     genome               //  string: reference genome name, e.g. hg19 
     ch_fasta             // channel: path(genome.fasta)
@@ -99,19 +105,21 @@ workflow HPVSEQ {
     ch_all_fastqs_rg = ch_all_fastqs.map { meta, reads ->
         def fastq = reads[0] // Check R1
         // Extract first line: @Instrument:Run:Flowcell:Lane:Tile:X:Y Read:Filter:Control:Index
-        def header = "zcat ${fastq} | head -n 1".execute().text.trim()
+        //def header = "zcat ${fastq} | head -n 1".execute().text.trim()
+        def header = ["bash", "-c", "zcat ${fastq} | head -n 1"].execute().text.trim()
         
         // Parse the sequencer header (e.g. Illumina) (adjust regex if using non-standard headers)
         def parts = header.split(':')
         if (parts.size() >= 7) {
             def flowcell = parts[2]
-            def lane     = parts[3]
+            //def lane     = parts[3]
             def index = "unknown"
             if (parts.size() >= 10) {//e.g. from SRR: M05097:166:000000000-KYHTV:1:1101:15530:1563 length=151
                 index    = parts[9] // Handle space before second part of header
             }
             //rg=$(echo "@RG\tID:"$flowcell"_"$lane"\tSM:"$samp"\tPL:Illumina\tPU:.\tLB:"$lib)
-            meta = meta + [ rg: "\"@RG\\tID:${flowcell}_${lane}\\tSM:${meta.id}\\tPL:${sequencing_platform}\\tPU:${flowcell}.${lane}.${index}\\tLB:${index}\"" ]
+            //meta = meta + [ rg: "\"@RG\\tID:${flowcell}_${lane}\\tSM:${meta.id}\\tPL:${sequencing_platform}\\tPU:${flowcell}.${lane}.${index}\\tLB:${index}\"" ]
+            meta = meta + [ rg: "\"@RG\\tID:${flowcell}\\tSM:${meta.id}\\tPL:${sequencing_platform}\\tPU:${flowcell}.${index}\\tLB:${index}\"" ]
         }else{
             meta = meta + [ rg: "\"@RG\\tID:${meta.id}\\tSM:${meta.id}\\tPL:${sequencing_platform}\\tPU:.\\tLB:.\"" ]
         }
@@ -119,10 +127,52 @@ workflow HPVSEQ {
     }
     
     //
+    // MODULE: Check sample index mismatch  
+    //
+    ch_index_mismatch = ch_all_fastqs_rg
+    .map { meta, reads ->
+        [ meta + [ id: "${meta.id}_L${meta.lane}"], reads ]
+    }
+    INDEX_MISMATCH (
+        ch_index_mismatch,
+        ch_index,
+        params.index_mismatch
+    )
+
+    INDEX_MISMATCH.out.reads
+        .branch { meta, reads, passfile, indexfile ->
+            passed: passfile.text.trim() == "1"
+            failed: passfile.text.trim() == "0"
+        }
+        .set { ch_status }
+
+    // Print a warning for every failed sample
+    ch_status.failed.subscribe { meta, reads, passfile, indexfile ->
+        log.warn "!!! [WARNING] Sample ${meta.id} FAILED validation of INDEX MISMATCH and will be skipped."
+    }
+
+    //
+    // MODULE: Update meta tp
+    //
+    ch_passed = ch_status.passed
+    .map { meta, reads, passfile, indexfile ->
+        [ meta, reads, indexfile ] 
+    }
+    META_TIMEPOINT (
+        ch_passed,
+        params.library
+    )
+    ch_fastqc = META_TIMEPOINT.out.reads
+    .map { meta, reads, tpfile ->
+        def tp = file(tpfile).text.trim()
+        [ meta + [ tp: tp ], reads ]
+    }
+
+    //
     // MODULE: Run fastqc and multiqc  
     //
     FASTQC (
-        ch_all_fastqs_rg
+        ch_fastqc
     )
 
     ch_multiqc_files = channel.empty()
@@ -145,20 +195,54 @@ workflow HPVSEQ {
     //
     // MODULE: Run merge fastq files 
     //
+    ch_cat_fastq = ch_fastqc
+    .map { meta, reads ->
+	def new_meta = meta.clone()
+        new_meta.id = meta.id.replaceAll(/_L\d+$/, "")
+        new_meta.remove('lane') // VERY IMPORTANT: remove the lane key
+        return [ new_meta, reads ]
+    }
+    .groupTuple()
+    .map { meta, reads -> 
+        // This turns [[R1, R2], [R3, R4]] into [R1, R2, R3, R4]
+        return [ meta, reads.flatten() ] 
+    }
+/*
+    ch_cat_fastq.view { meta, reads ->
+    """
+       SAMPLE       : ${meta.id}
+       KEYS         : ${meta.keySet()}
+       RG           : ${meta.rg}
+       PATHS        : ${reads} 
+    """ 
+    }
+*/
     CAT_FASTQ (
-        ch_all_fastqs_rg
+        ch_cat_fastq
     )
+    ch_fastqs = CAT_FASTQ.out.reads
 
     //
-    // MODULE: Run trim read length 
-    //
+    // Run or skip trim read length
+    // 
+    if ( !params.skip_trim_read ) {
+        FASTQP (
+	    ch_fastqs.map { meta, reads -> [ meta, reads, [] ] }, // meta, reads, adapter
+	    false, // discard_trimmed_pass (keep the data)
+	    false, // save_trimmed_fail (don't save bad reads)
+	    false  // save_merged (don't stitch R1/R2)
+        )
+        ch_tag2header = FASTP.out.reads
+    } else {
+        ch_tag2header = ch_fastqs 
+    }
 
 
     //
     // MODULE: Run tag_to_header  
     //
     TAGTOHEADER (
-        ch_all_fastqs_rg,
+        ch_tag2header,
         ch_blist
     )
 
@@ -207,6 +291,15 @@ workflow HPVSEQ {
         ch_fasta_fai.first(),
         ch_dict,
         ch_bed
+    )
+    
+    //
+    // MODULE: Run sample swap based on de-dup bam files  
+    //
+    ch_checkmate = ch_bam.map { meta, bam, bai -> [ meta, bam ] }
+    CHECKMATE (
+        ch_checkmate,
+        ch_fasta_fai.first()
     )
  
     //
@@ -313,6 +406,13 @@ workflow HPVSEQ {
         QUANTIFICATION.out.bed_genotype
     )
  
+    //
+    // QUANTIFICATION: re-align unmapped reads on given genotype
+    //
+    QUANTIFICATION (
+        ch_quantification
+    )
+
     //
     // Summary: on-target rate (hsmetrics), coverage qc, genotyping, coverage quantification, saturation rate
     //

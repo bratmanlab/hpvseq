@@ -42,12 +42,12 @@ process SUMMARIZE_REPORT {
     summ_saturation_table_file = "saturation.summ.table.txt"
     """
     ## on-target rate
-    #head ${hsmetrics_file1} -n 7 | tail -n 1 | awk '{print "samp",\$3,\$4,\$5,\$6,\$9,\$10,\$13,\$14,\$15,\$16,\$17,\$18,\$20,\$22,\$23,\$26,\$27}' > ${summ_hsmetrics_file}
-    head ${hsmetrics_file1} -n 7 | tail -n 1 | awk '{print "samp",\$2,\$21,\$3,\$23,\$31,\$32,\$28,\$29,\$4,\$5,\$6,\$30,\$8,\$10,\$34,\$11,\$12}' > ${summ_hsmetrics_file}
+    #head ${hsmetrics_file1} -n 7 | tail -n 1 | awk -F'\t' '{print "samp",\$3,\$4,\$5,\$6,\$9,\$10,\$13,\$14,\$15,\$16,\$17,\$18,\$20,\$22,\$23,\$26,\$27}' > ${summ_hsmetrics_file}
+    head ${hsmetrics_file1} -n 7 | tail -n 1 | awk -F'\t' '{print "samp",\$2,\$21,\$3,\$23,\$31,\$32,\$28,\$29,\$4,\$5,\$6,\$30,\$8,\$10,\$34,\$11,\$12}' > ${summ_hsmetrics_file}
     for file in ${hsmetrics_files};do
         samp=\$(echo \$file | awk -F'.CollectHsMetrics' '{print \$1}')
-        #head \$file -n 8 | tail -n 1 | awk -v samp=\$samp '{print samp,\$3,\$4,\$5,\$6,\$9,\$10,\$13,\$14,\$15,\$16,\$17,\$18,\$20,\$22,\$23,\$26,\$27}' >> ${summ_hsmetrics_file}
-        head \$file -n 8 | tail -n 1 | awk -v samp=\$samp '{print samp,\$2,\$21,\$3,\$23,\$31,\$32,\$28,\$29,\$4,\$5,\$6,\$30,\$8,\$10,\$34,\$11,\$12}' >> ${summ_hsmetrics_file}
+        #head \$file -n 8 | tail -n 1 | awk -F'\t' -v samp=\$samp '{print samp,\$3,\$4,\$5,\$6,\$9,\$10,\$13,\$14,\$15,\$16,\$17,\$18,\$20,\$22,\$23,\$26,\$27}' >> ${summ_hsmetrics_file}
+        head \$file -n 8 | tail -n 1 | awk -F'\t' -v samp=\$samp '{print samp,\$2,\$21,\$3,\$23,\$31,\$32,\$28,\$29,\$4,\$5,\$6,\$30,\$8,\$10,\$34,\$11,\$12}' >> ${summ_hsmetrics_file}
         done
 
     awk 'NR==1{print "Sample", "PCT_OFF_BAIT", "PCT_NEAR_BAIT", "PCT_ON_BAIT", "PCT_ON_TARGET"}NR>1{offbait=\$12/\$8*100; nearbait=\$11/\$8*100; onbait=\$10/\$8*100; ontarget=\$13/\$8*100; print \$1, offbait, nearbait, onbait, ontarget}' ${summ_hsmetrics_file} > ${summ_hsmetrics_table_file}

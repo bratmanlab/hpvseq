@@ -79,15 +79,15 @@ For more details about the output files and reports, please refer to the
 ```text
 .   
 ├── fastq or SRA? ✅  
-├── Pre-QC ❓
-│   └── Sample index error rate matched? ❓ 
+├── Pre-QC 
+│   └── Sample index error rate matched? ✅ 
 ├── QC
 │   ├── FastqQC 
 │   └── MultiQC
 │       └── [ Report: QC Sequencing ] ✅
-├── Post-QC ❓
-│   ├── Trim read length? ❓ 
-│   └── Merge fastq files? ❓ 
+├── Post-QC 
+│   ├── Trim read length? [ included but not tested yet ] ❓ 
+│   └── Merge fastq files? ✅ 
 ├── Alignment to human genome
 │   ├── [ Report: QC coverage ] ✅
 │   ├── [ Report: on-target rate ] ✅
