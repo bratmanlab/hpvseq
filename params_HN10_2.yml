@@ -1,0 +1,41 @@
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##     bratmanlab/hpvseq 1.0.0dev
+## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+input: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10_2/fastq/sample_sheet.csv"
+outdir: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10_2/results"
+
+# Pre-QC
+index_mismatch: 0
+index: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10_2/i7_i5revcomp" 
+key_pool: false
+pool_delim: "_"
+library: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10_2/lib.txt"
+
+# QC
+skip_fastqc: false
+skip_multiqc: false
+
+# Post-QC
+skip_trim_read: true
+
+# Preparation 
+blist: "/cluster/projects/scottgroup/people/jinfeng/data/barcode_DIME_5or6UMI.txt"
+
+# Reference genome and cytoband for ConsensusCruncher (i.e. hg19 | hg38)
+sequencing_platform: "Illumina"
+genome: "hg19"
+ref_path: "/cluster/tools/data/genomes/human"
+bed: "/cluster/projects/scottgroup/people/jinfeng/data/bait_target_bed/HPV/Human4_STK11onHuman3_30SNPs.bed" 
+bait_intervals: "/cluster/projects/scottgroup/people/jinfeng/data/bait_target_bed/HPV/Human4_STK11onHuman3_30SNPs.interval_list"
+target_intervals: "/cluster/projects/scottgroup/people/jinfeng/data/bait_target_bed/HPV/Human4_STK11onHuman3_30SNPs.interval_list"
+ 
+# Tools
+consensuscruncher_dir: "/cluster/home/jfzou/ConsensusCruncher3" 
+samtools_path: "/cluster/tools/software/rocky9/samtools/1.20/bin/samtools"
+smash: "/cluster/home/jfzou/github/SMaSH/SMaSH.py"
+
+# Reference genome for virus: each virus genome files in an directory in ref_path_virus
+genome_genotyping: "HPV_38genomes"
+ref_path_virus: "/cluster/projects/scottgroup/people/jinfeng/data/HPVs"
+genotypes: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/data/HPV_38genomes.ref.txt" 
