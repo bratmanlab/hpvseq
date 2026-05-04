@@ -93,7 +93,7 @@ For more details about the output files and reports, please refer to the
 │   ├── [ Report: on-target rate ] ✅
 │   ├── Dedup
 │   │   └── SMaSh
-│   │       └── [ Report: Sample swap ] ❓
+│   │       └── [ Report: Sample swap ]  ✅ 
 │   └── GATK BQSR  
 │       └── ConsensusCruncher 
 │           ├── dcs_sc: dcs.sc
@@ -106,26 +106,31 @@ For more details about the output files and reports, please refer to the
 │   └── ConsensusCruncher 
 │       └── dcs_sc: all.unique.dcs
 │           └── [ Report: detected genotypes ] ✅
-└── Quantification preparation on dominant genotype
-    └── Alignment of hg-unmapped reads to the given genotype 
-        └── ConsensusCruncher 
-            ├── dcs_sc: dcs.sc
-            │   └── [ Report: Variant calls ] ❓
-            ├── dcs_sc: all.unique.dcs
-            │   └── [ Report: Variants VAF ] ❓
-            ├── [ Report: Saturation rate ] ✅
-            └── [ Report: Qantification coverage ] ✅ 
-
-. ❓
-└── Quantitfication preparation on baseline-corrected genotype
-    └──Alignment of hg-unmapped reads to the given genotype
-        └── ConsensusCruncher
-            ├── dcs_sc: dcs.sc
-            │   └── [ Report: Variant calls ] ❓
-            ├── dcs_sc: all.unique.dcs
-            │   └── [ Report: Variants VAF ] ❓
-            ├── [ Report: Saturation rate ] ❓
-            └── [ Report: Quantification coverage ] ❓
+├── Quantification preparation on dominant genotype
+│   └── Alignment of hg-unmapped reads to the given genotype 
+│       └── ConsensusCruncher 
+│           ├── dcs_sc: dcs.sc
+│           │   └── [ Report: Variant calls ] ❓
+│           ├── dcs_sc: all.unique.dcs
+│           │   └── [ Report: Variants VAF ] ❓
+│           ├── [ Report: Saturation rate ] ✅
+│           └── [ Report: Qantification coverage ] ✅ 
+│ 
+├── Quantitfication preparation on baseline-corrected genotype
+│   └──Alignment of hg-unmapped reads to the given genotype
+│      └── ConsensusCruncher
+│           ├── dcs_sc: dcs.sc
+│           │   └── [ Report: Variant calls ] ❓
+│           ├── dcs_sc: all.unique.dcs
+│           │   └── [ Report: Variants VAF ] ❓
+│           ├── [ Report: Saturation rate ] ✅
+│           └── [ Report: Quantification coverage ] ✅
+│
+└── HPV integration by SearcHPV (one of two, not both)
+    ├── if genotype corrected based on baseline
+    │   └── [ Report: Breakpoints on corrected genotype ] ❓
+    └── if no genotype correction
+        └── [ Report: Breakpoints on dominant genotype ] ❓
 ```
 
 ## Credits

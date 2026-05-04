@@ -341,14 +341,20 @@
         },
         "key_pool": {
             "type": "boolean",
-	    "description": "Pool name is needed for getting timepoint"
+            "description": "Pool name is needed for getting timepoint"
         },
         "pool_delim": {
             "type": "string"
         },
         "library": {
             "type": "string",
-	    "description": "containing optional pool name, i7, i5, timepoint"
+            "description": "containing optional pool name, i7, i5, timepoint"
+        },
+        "baseline_name": {
+            "type": "string"
+        },
+        "buffycoat_name": {
+            "type": "string"
         }
     }
 }

@@ -38,4 +38,7 @@ smash: "/cluster/home/jfzou/github/SMaSH/SMaSH.py"
 # Reference genome for virus: each virus genome files in an directory in ref_path_virus
 genome_genotyping: "HPV_38genomes"
 ref_path_virus: "/cluster/projects/scottgroup/people/jinfeng/data/HPVs"
-genotypes: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/data/HPV_38genomes.ref.txt" 
+genotypes: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/data/HPV_38genomes.ref.txt"
+baseline_name: "A-SCREEN"
+buffycoat_name: "None"
+genotype_correction: true 

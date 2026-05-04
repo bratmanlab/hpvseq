@@ -96,7 +96,6 @@ process SUMMARIZE_REPORT {
     for file in ${coverage_sscs_files};do get_cov \$file "depth_qc_sscs" ${summ_coverage_qc_file};done
     for file in ${coverage_sscssc_files};do get_cov \$file "depth_qc_sscs.sc" ${summ_coverage_qc_file};done 
     for file in ${coverage_alluniquedcs_files};do get_cov \$file "depth_qc_all.unique.dcs" ${summ_coverage_qc_file};done 
-
     pivot ${summ_coverage_qc_file} ${summ_coverage_qc_table_file}
 
     ## genotyping
@@ -163,8 +162,8 @@ process SUMMARIZE_REPORT {
 
     stub:
     """
-    touch ${meta.id}.reformatted_1.fastq.gz
-    touch ${meta.id}.reformatted_2.fastq.gz
+    touch hsmetrics.summ.txt
+    touch hsmetrics.summ.table.txt
     """
 }
 

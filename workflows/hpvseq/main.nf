@@ -25,19 +25,23 @@ include { GATK3_DEPTHOFCOVERAGE as COVERAGE_QC_ALLUNIQUEDCS } from '../../module
 include { SAMTOOLS_VIEW as SAMTOOLS_VIEW_PROPERLYPAIRED     } from '../../modules/nf-core/samtools/view'
 include { SAMTOOLS_INDEX         } from '../../modules/nf-core/samtools/index'
 include { SUMMARIZE_REPORT       } from '../../modules/local/summarizereport'
+include { SUMMARIZE_QUANTIFICATION_CORRECTED        } from '../../modules/local/summarize_quantification_corrected'
 
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../../subworkflows/local/utils_nfcore_hpvseq_pipeline'
 
+include { CHECKMATE              } from '../../subworkflows/local/checkmate'
 include { ALIGN_BWA              } from '../../subworkflows/local/align_bwa'
 include { GATK4_BQSR             } from '../../subworkflows/local/gatk4_bqsr'
 include { GENOTYPING             } from '../../subworkflows/local/genotyping'
-include { QUANTIFICATION         } from '../../subworkflows/local/quantification'
-include { COVERAGE_QUANTIFICATION_F2 as COVERAGE_QUANTIFICATION_HG    } from '../../subworkflows/local/coverage_quantification_f2'
-include { COVERAGE_QUANTIFICATION_F2 as COVERAGE_QUANTIFICATION_VIRUS } from '../../subworkflows/local/coverage_quantification_f2'
-include { CHECKMATE              } from '../../subworkflows/local/checkmate'
+include { INPUT_QUANTIFICATION_CORRECTED             } from '../../subworkflows/local/input/quantification_corrected'
+include { QUANTIFICATION as QUANTIFICATION_DOMINANT  } from '../../subworkflows/local/quantification'
+include { QUANTIFICATION as QUANTIFICATION_CORRECTED } from '../../subworkflows/local/quantification'
+include { COVERAGE_QUANTIFICATION_DOMINANT_F2 as COVERAGE_QUANTIFICATION_HG    } from '../../subworkflows/local/coverage_quantification_dominant_f2'
+include { COVERAGE_QUANTIFICATION_DOMINANT_F2 as COVERAGE_QUANTIFICATION_VIRUS } from '../../subworkflows/local/coverage_quantification_dominant_f2'
+include { COVERAGE_QUANTIFICATION_CORRECTED_F2 as COVERAGE_QUANTIFICATION_CORRECTED_VIRUS } from '../../subworkflows/local/coverage_quantification_corrected_f2'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -390,28 +394,60 @@ workflow HPVSEQ {
     //
     // QUANTIFICATION: re-align unmapped reads on given genotype
     //
-    QUANTIFICATION (
+    QUANTIFICATION_DOMINANT (
         ch_quantification
     )
 
-    ch_quantification_reads = QUANTIFICATION.out.bam_alluniquedcs.join(QUANTIFICATION.out.bai_alluniquedcs)
+    ch_quantification_reads = QUANTIFICATION_DOMINANT.out.bam_alluniquedcs.join(QUANTIFICATION_DOMINANT.out.bai_alluniquedcs)
     ch_quantification_reads = ch_quantification_reads
     .map { meta, bam, bai -> [ meta + [ consensus: "all.unique.dcs"], bam, bai ] }
 
     // Report: Quantification coverage (with -f 2)
     COVERAGE_QUANTIFICATION_VIRUS (
         ch_quantification_reads,
-        QUANTIFICATION.out.fasta_fai_genotype,
-        QUANTIFICATION.out.dict_genotype,
-        QUANTIFICATION.out.bed_genotype
+        QUANTIFICATION_DOMINANT.out.fasta_fai_genotype,
+        QUANTIFICATION_DOMINANT.out.dict_genotype,
+        QUANTIFICATION_DOMINANT.out.bed_genotype
     )
  
     //
-    // QUANTIFICATION: re-align unmapped reads on given genotype
+    // QUANTIFICATION: re-align unmapped reads on given baseline-corrected genotype
     //
-    QUANTIFICATION (
+    if ( params.genotype_correction ) {
         ch_quantification
-    )
+        .branch { meta, bam_unmapped, genotype_file ->
+            baseline : meta.tp == params.baseline_name
+            others   : meta.tp != params.baseline_name
+        }
+        .set { ch_genotype_correction }
+        ch_baseline_info = ch_genotype_correction.baseline
+        .map { meta, bam_unmapped, genotype_file ->
+            [ meta.id, genotype_file.text.trim() ]
+        }
+        .toList()
+        .map { list ->
+            println list
+            list.collect { pair -> "${pair[0]}:${pair[1]}" }.join(" ")
+        }
+        INPUT_QUANTIFICATION_CORRECTED (
+            GENOTYPING.out.bam_unmapped,
+            ch_baseline_info,
+            CHECKMATE.out.best_guesses
+        )
+        ch_quantitification_corrected = INPUT_QUANTIFICATION_CORRECTED.out.quantification_corrected_input
+
+        QUANTIFICATION_CORRECTED (
+            ch_quantitification_corrected
+        )
+
+        // Report: Quantification coverage (with -f 2) on baseline-corrected genotype
+        COVERAGE_QUANTIFICATION_CORRECTED_VIRUS (
+            ch_quantification_reads,
+            QUANTIFICATION_CORRECTED.out.fasta_fai_genotype,
+            QUANTIFICATION_CORRECTED.out.dict_genotype,
+            QUANTIFICATION_CORRECTED.out.bed_genotype
+        )
+    }
 
     //
     // Summary: on-target rate (hsmetrics), coverage qc, genotyping, coverage quantification, saturation rate
@@ -435,11 +471,13 @@ workflow HPVSEQ {
     ch_genotyping_report = GENOTYPING.out.genotyping_reads.map { meta, file -> file }.collect()
     genotypes_info       = ch_genotypes.map { map, file -> file}
 
-    ch_coverage_quantification_hg       = COVERAGE_QUANTIFICATION_HG.out.summary.collect()
-    ch_coverage_quantification_virus    = COVERAGE_QUANTIFICATION_VIRUS.out.summary.collect()
+    ch_coverage_quantification_hg              = COVERAGE_QUANTIFICATION_HG.out.summary.collect()
+    ch_coverage_quantification_virus           = COVERAGE_QUANTIFICATION_VIRUS.out.summary.collect()
+    ch_coverage_quantification_corrected_virus = COVERAGE_QUANTIFICATION_CORRECTED_VIRUS.out.summary.collect()
 
-    ch_read_families        = CONSENSUSCRUNCHER.out.optional_read_families.collect()
-    ch_read_families_virus  = QUANTIFICATION.out.read_families.collect()
+    ch_read_families                  = CONSENSUSCRUNCHER.out.optional_read_families.collect()
+    ch_read_families_virus            = QUANTIFICATION_DOMINANT.out.read_families.collect()
+    ch_read_families_virus_corrected = QUANTIFICATION_CORRECTED.out.read_families.collect()
 
     SUMMARIZE_REPORT (
         ch_hsmetrics_report,
@@ -454,12 +492,19 @@ workflow HPVSEQ {
         ch_coverage_quantification_hg, 
         ch_coverage_quantification_virus,
         ch_read_families, 
-        ch_read_families_virus 
+        ch_read_families_virus
     )     
-
+    if ( params.genotype_correction ) {
+        SUMMARIZE_QUANTIFICATION_CORRECTED (
+	    ch_coverage_quantification_hg, 
+	    ch_coverage_quantification_virus,
+	    ch_read_families, 
+	    ch_read_families_virus_corrected
+        )     
+    }
     emit:
     cc_dir                  = CONSENSUSCRUNCHER.out.consensus_dir
-    cc_dir_genotype         = QUANTIFICATION.out.consensus_dir
+    cc_dir_genotype         = QUANTIFICATION_DOMINANT.out.consensus_dir
     multiqc_report          = "Later"
 }
 /*

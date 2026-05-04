@@ -117,5 +117,6 @@ workflow GENOTYPING {
     read_families      = CONSENSUSCRUNCHER.out.optional_read_families
     bam_alluniquedcs   = CONSENSUSCRUNCHER.out.bam_alluniquedcs
     bai_alluniquedcs   = CONSENSUSCRUNCHER.out.bai_alluniquedcs
+    bam_unmapped       = ch_unmapped
 }
 
