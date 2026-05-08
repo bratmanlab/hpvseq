@@ -1,6 +1,6 @@
 process GATK3_DEPTHOFCOVERAGE {
     tag "${meta.id}_${meta.ref}${meta.type}_${meta.ref2}${meta.type2}_${meta.consensus}"
-    label 'process_low'
+    label 'process_medium'
 
     // not confirmed
     container 'broadinstitute/gatk3:3.8-1'

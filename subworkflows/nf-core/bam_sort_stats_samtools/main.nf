@@ -19,7 +19,7 @@ workflow BAM_SORT_STATS_SAMTOOLS {
     SAMTOOLS_SORT.out.bam
         .join(SAMTOOLS_INDEX.out.index, by: [0])
         .set { ch_bam_bai }
-
+    
     BAM_STATS_SAMTOOLS(ch_bam_bai, ch_fasta_fai)
 
     emit:
