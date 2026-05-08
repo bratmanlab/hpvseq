@@ -355,6 +355,22 @@
         },
         "buffycoat_name": {
             "type": "string"
+        },
+        "skip_checkmate": {
+            "type": "boolean"
+        },
+        "skip_genotyping": {
+            "type": "boolean"
+        },
+        "skip_integration": {
+            "type": "boolean"
+        },
+        "skip_genotype_correction": {
+            "type": "boolean",
+            "default": true
+        },
+        "skip_insertsize": {
+            "type": "boolean"
         }
     }
 }

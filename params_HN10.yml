@@ -2,22 +2,25 @@
 ##     bratmanlab/hpvseq 1.0.0dev
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-input: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10_2/fastq/sample_sheet.csv"
-outdir: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10_2/results"
+input: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10/fastq/sample_sheet.csv"
+outdir: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10/results"
 
 # Pre-QC
 index_mismatch: 0
-index: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10/i7_i5" 
-key_pool: true
+index: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10/i7_i5revcomp" 
+key_pool: false
 pool_delim: "_"
-library: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10/fastq2/lib.txt"
+library: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10/lib.txt"
 
-# QC
+# Skip 
 skip_fastqc: false
 skip_multiqc: false
-
-# Post-QC
 skip_trim_read: true
+skip_checkmate: false 
+skip_genotyping: false
+skip_insertsize: false 
+skip_integration: false 
+skip_genotype_correction: false 
 
 # Preparation 
 blist: "/cluster/projects/scottgroup/people/jinfeng/data/barcode_DIME_5or6UMI.txt"
@@ -38,4 +41,8 @@ smash: "/cluster/home/jfzou/github/SMaSH/SMaSH.py"
 # Reference genome for virus: each virus genome files in an directory in ref_path_virus
 genome_genotyping: "HPV_38genomes"
 ref_path_virus: "/cluster/projects/scottgroup/people/jinfeng/data/HPVs"
-genotypes: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/data/HPV_38genomes.ref.txt" 
+genotypes: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/data/HPV_38genomes.ref.txt"
+
+baseline_name: "A-SCREEN"
+buffycoat_name: "None"
+

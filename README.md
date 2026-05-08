@@ -21,7 +21,7 @@
 
 ## Introduction
 
-**bratmanlab/hpvseq** is a bioinformatics pipeline that detects HPV DNAs, identifies HPV genotype and evaluates the quantification on **dual-UMIs** and **paired-end** barcoding sequencing data by demultiplexing method of ConsensusCruncher (https://github.com/pughlab/ConsensusCruncher). ...
+**bratmanlab/hpvseq** is a bioinformatics nextflow pipeline including HPV DNA detection, HPV genotyping and quantification, integration detection, fragment insert size estimation and variant calling on **dual-UMIs** and **paired-end** barcoding sequencing data by demultiplexing method of ConsensusCruncher (https://github.com/pughlab/ConsensusCruncher). It is tested on HPC, and will be on cloud in future. 
 
 <!-- TODO bratmanlab:
    Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
@@ -105,7 +105,7 @@ For more details about the output files and reports, please refer to the
 ├── Genotyping by aligning hg-unmapped reads to 38 HPV genomes
 │   └── ConsensusCruncher 
 │       └── dcs_sc: all.unique.dcs
-│           └── [ Report: detected genotypes ] ✅
+│           └── [ Report: detected genotypes (-f 2 -q 30) ] ✅
 ├── Quantification preparation on dominant genotype
 │   └── Alignment of hg-unmapped reads to the given genotype 
 │       └── ConsensusCruncher 
@@ -114,7 +114,7 @@ For more details about the output files and reports, please refer to the
 │           ├── dcs_sc: all.unique.dcs
 │           │   └── [ Report: Variants VAF ] ❓
 │           ├── [ Report: Saturation rate ] ✅
-│           └── [ Report: Qantification coverage ] ✅ 
+│           └── [ Report: Qantification coverage (-f 2) ] ✅ 
 │ 
 ├── Quantitfication preparation on baseline-corrected genotype
 │   └──Alignment of hg-unmapped reads to the given genotype
@@ -124,13 +124,18 @@ For more details about the output files and reports, please refer to the
 │           ├── dcs_sc: all.unique.dcs
 │           │   └── [ Report: Variants VAF ] ❓
 │           ├── [ Report: Saturation rate ] ✅
-│           └── [ Report: Quantification coverage ] ✅
+│           └── [ Report: Quantification coverage (-f 2) ] ✅
 │
-└── HPV integration by SearcHPV (one of two, not both)
+├── HPV integration by SearcHPV (UMI-trimmed reads)
+│   ├── if genotype corrected based on baseline
+│   │   └── [ Report: Breakpoints on corrected genotype ] ✅
+│   └── if no genotype correction
+│       └── [ Report: Breakpoints on dominant genotype ] ✅
+└── Insert size by picard (properly-pairead reads; circle not corrected)
     ├── if genotype corrected based on baseline
-    │   └── [ Report: Breakpoints on corrected genotype ] ❓
+    │   └── [ Report: Insert size metrics on corrected genotype (-f 2) ] ✅ 
     └── if no genotype correction
-        └── [ Report: Breakpoints on dominant genotype ] ❓
+        └── [ Report: Insert size metrics on dominant genotype (-f 2) ] ✅
 ```
 
 ## Credits

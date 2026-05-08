@@ -1,6 +1,6 @@
 process INDEX_MISMATCH {
     tag "$meta.id"
-    label 'process_low'
+    label 'process_single'
 
     input:
     tuple val(meta), path(reads)

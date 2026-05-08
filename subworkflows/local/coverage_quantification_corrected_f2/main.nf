@@ -27,7 +27,6 @@ workflow COVERAGE_QUANTIFICATION_CORRECTED_F2 {
     ch_quantification_properlypaired = SAMTOOLS_VIEW_PROPERLYPAIRED.out.bam
     SAMTOOLS_INDEX(ch_quantification_properlypaired)
     ch_quantification_coverage = ch_quantification_properlypaired.join(SAMTOOLS_INDEX.out.index)
-
     COVERAGE_QUANTIFICATION_CORRECTED (
         ch_quantification_coverage,
         fasta_fai,

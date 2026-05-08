@@ -1,6 +1,6 @@
 process GENOTYPING_READS {
     tag "${meta.id}_genotyping"
-    label 'process_low'
+    label 'process_single'
 
     input:
     tuple val(meta), path(bam), path(bai)

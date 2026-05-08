@@ -12,21 +12,36 @@ workflow QUANTIFICATION {
     input           // channel: [ val(meta), path(bam), path(genotype) ]
 
     main:
-    bam      = input.map { meta, bam, genotype -> [ meta, bam ] } 
-    genotype = input.map { meta, bam, genotype -> [ meta, genotype ] } 
+    bam      = input.map { meta, bam, genotype -> tuple( meta, bam ) } 
+    genotype = input.map { meta, bam, genotype -> tuple( meta, genotype ) } 
     //bam.view { meta, bam -> "UNMAPPED BAM PATH : ${bam}" }
 
     //
     // Prepare virus genomes
     //
-    
+/* 
     ch_virus = input
     .map { meta, bam, genotype_file ->
 	// 1. Extract the virus name safely from the first line of the file
 	// readLines() is okay for tiny files (1-2 lines), but use with caution
 	def lines = genotype_file.readLines()
 	def virus_name = lines ? lines[0].trim() : null
-	return [ meta, virus_name ]
+	tuple( meta, virus_name ) 
+    }
+*/
+    ch_virus = input
+    .map { meta, bam, genotype ->
+        def virus_name = ""
+        // Check if genotype is a Path/File or just a String
+        if (genotype instanceof Path || genotype instanceof File) {
+            // Read first line if it's a file
+            def lines = genotype.readLines()
+            virus_name = lines ? lines[0].trim() : null
+        } else {
+            // It's already a string, use it directly
+            virus_name = genotype.toString().trim()
+        }
+        tuple( meta, virus_name ) 
     }
 
     ch_sort_fasta_fai = ch_virus
@@ -35,28 +50,28 @@ workflow QUANTIFICATION {
 	// 2. Construct paths using the extracted name
 	def fasta = file("${params.ref_path_virus}/${virus_name}/${virus_name}.fasta")
 	def fai   = file("${params.ref_path_virus}/${virus_name}/${virus_name}.fasta.fai")
-	return [ meta, fasta, fai ]
+	tuple( meta + [ virus: virus_name ], fasta, fai ) 
     }
 
     ch_dict = ch_virus
     .filter { meta, virus_name -> virus_name != null } // Skip if no virus name found
     .map { meta, virus_name ->
 	def dict   = file("${params.ref_path_virus}/${virus_name}/${virus_name}.dict")
-	return [ meta, dict ]
+	tuple( meta, dict ) 
     }
     
     ch_cytoband = ch_virus
     .filter { meta, virus_name -> virus_name != null } // Skip if no virus name found
     .map { meta, virus_name ->
 	def cytoband = file("${params.ref_path_virus}/${virus_name}/${virus_name}.cytoband")
-	return [ [id: virus_name], cytoband ]
+	tuple( [id: virus_name], cytoband ) 
     }
 
     // "" represents whole genome 
     ch_bed = ch_virus
     .map { meta, virus_name ->
 	def bedfile   = file("${params.ref_path_virus}/${virus_name}/${virus_name}_E6E7.bed")
-        return [ meta, bedfile.exists() ? bedfile : [] ]
+        tuple( meta, bedfile.exists() ? bedfile : [] ) 
     }
 /*
     ch_cytoband.view { meta, cytoband -> 
@@ -70,7 +85,7 @@ workflow QUANTIFICATION {
     .filter { meta, virus_name -> virus_name != null } // Skip if no virus name found
     .map { meta, virus_name ->
 	def index = file("${params.ref_path_virus}/${virus_name}/")
-	return [ [id: virus_name], index ]
+	tuple( [id: virus_name], index )
     }
 /*
     ch_index.view { meta, index -> 
@@ -111,13 +126,13 @@ workflow QUANTIFICATION {
     ch_orig_bam = ch_orig_bam
         .join(ch_virus)
         .map { meta, bam, virus_name ->
-            [ meta + [ref2: virus_name, type2: "Aligned", consensus: "none"], bam ]
+            tuple( meta + [ref2: virus_name, type2: "Aligned", consensus: "none"], bam ) 
         }
 /*
     ch_orig_bam = ch_orig_bam
         .combine(ch_index)
         .map { meta, bam, meta_genome, index ->
-            [ meta + [ref2: meta_genome.id, type2: "Aligned", consensus: "none"], bam ]
+            tuple( meta + [ref2: meta_genome.id, type2: "Aligned", consensus: "none"], bam ) 
         }
 
     ch_orig_bam.view { meta, bam -> 

@@ -33,7 +33,7 @@ workflow GENOTYPING {
     .map { meta, bam -> 
         [ meta + [ type: "Unmapped"], bam ]
     }
- 
+
     //
     // Bam to fastq 
     //
@@ -42,6 +42,7 @@ workflow GENOTYPING {
         fasta.first(),
         false
     )
+
     //
     // Align to the given genome 
     //
