@@ -131,11 +131,20 @@ For more details about the output files and reports, please refer to the
 │   │   └── [ Report: Breakpoints on corrected genotype ] ✅
 │   └── if no genotype correction
 │       └── [ Report: Breakpoints on dominant genotype ] ✅
-└── Insert size by picard (properly-pairead reads; circle not corrected)
-    ├── if genotype corrected based on baseline
-    │   └── [ Report: Insert size metrics on corrected genotype (-f 2) ] ✅ 
-    └── if no genotype correction
-        └── [ Report: Insert size metrics on dominant genotype (-f 2) ] ✅
+├── Insert size by picard (properly-pairead reads; circle not corrected)
+│   ├── if genotype corrected based on baseline
+│   │   └── [ Report: Insert size metrics on corrected genotype (-f 2) ] ✅ 
+│   └── if no genotype correction
+│       └── [ Report: Insert size metrics on dominant genotype (-f 2) ] ✅
+└── Genome-level distribution of depth of coverage for virus
+    └── [ Report: depth of coverage per bp ] ❓ 
+
+Check completeness on output files and logs
+.
+├── ConsensusCruncher ❓ 
+├── Integration ❓
+├── Insert size ❓
+
 ```
 
 ## Credits

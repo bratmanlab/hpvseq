@@ -107,7 +107,7 @@ workflow {
     ch_fasta              = channel.value([ [id: params.genome], file_fasta ])
     ch_fai                = channel.value([ [id: params.genome], file_fai ])
     ch_dict               = channel.value([ [id: params.genome], file_dict ])
-    ch_bwa_index          = channel.value(file(params.bwa_index, checkIfExists: true))
+    ch_bwa_index          = channel.value([ [id: params.genome], file(params.bwa_index, checkIfExists: true) ])
     ch_bed                = channel.value([ [id: params.genome], file(params.bed, checkIfExists: true) ])
     // Virus genome
     file_genotyping_fasta = file(params.genomes[params.genome_genotyping].fasta, checkIfExists: true)

@@ -1,6 +1,5 @@
 process SUMMARIZE_REPORTS {
     tag "summarize_report"
-    label 'process_single'
 
     input:
     path coverage_bwa_files

@@ -1,6 +1,5 @@
 process SUMMARIZE_QUANTIFICATION_CORRECTED {
     tag "summarize_quantification_corrected"
-    label 'process_single'
 
     input:
     path coverage_quantification_hg_files 

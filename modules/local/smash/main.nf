@@ -1,5 +1,4 @@
 process SMASH {
-    label 'process_medium'
 
     input:
     path(bams)

@@ -24,8 +24,8 @@ def getBwaPercentMapped(align_flagstat) {
 workflow ALIGN_BWA {
     take:
     reads         // channel: [ val(meta), [ reads ] ]
-    index         // channel: /path/to/bwa/index/ ?
-    fasta         // channel: [ val(meta), path(fasta), path(fai) ]
+    index         // channel: [ val(meta2), /path/to/bwa/index/ ]
+    fasta         // channel: [ val(meta2), path(fasta), path(fai) ]
 
     main:
 
@@ -34,7 +34,8 @@ workflow ALIGN_BWA {
     //
     BWA_MEM(
         reads,
-        index.map { index_path -> [ [id: 'genome'], index_path ] },
+        //index.map { index_path -> [ [id: 'genome'], index_path ] },
+        index,
         [ [:], [] ],    // No fasta needed for BAM output
         false           // sort_bam - we'll sort with samtools for consistency
     )

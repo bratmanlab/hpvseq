@@ -371,6 +371,9 @@
         },
         "skip_insertsize": {
             "type": "boolean"
+        },
+        "checkmate_best_guesses": {
+            "type": "string"
         }
     }
 }

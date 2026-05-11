@@ -1,6 +1,5 @@
 process SUMMARIZE_TOHSMETRICS {
     tag "summarize_toHsmetrics"
-    label 'process_single'
 
     input:
     path nreads_raw_files

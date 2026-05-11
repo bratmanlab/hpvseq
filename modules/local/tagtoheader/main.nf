@@ -1,6 +1,6 @@
 process TAGTOHEADER {
     tag "$meta.id"
-    label 'process_low'
+    label 'process_medium'
 
     input:
     tuple val(meta), path(reads)

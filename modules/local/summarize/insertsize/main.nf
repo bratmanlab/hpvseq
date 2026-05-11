@@ -1,6 +1,5 @@
 process SUMMARIZE_INSERTSIZE {
     tag "summarize_insertsize"
-    label 'process_single'
 
     input:
     path insertsize_hg_files 

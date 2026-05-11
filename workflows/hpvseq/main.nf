@@ -9,6 +9,7 @@ include { META_TIMEPOINT         } from '../../modules/local/meta_timepoint'
 include { CAT_FASTQ              } from '../../modules/nf-core/cat/fastq'
 include { FASTP                  } from '../../modules/nf-core/fastp'
 include { REFORMAT_FASTQ         } from '../../modules/local/reformatfastq'
+include { REFORMAT_FASTQ2        } from '../../modules/local/reformatfastq2'
 include { FASTQC                 } from '../../modules/nf-core/fastqc'
 include { MULTIQC                } from '../../modules/nf-core/multiqc'
 include { TAGTOHEADER            } from '../../modules/local/tagtoheader'
@@ -31,6 +32,7 @@ include { SUMMARIZE_TOHSMETRICS  } from '../../modules/local/summarize/tohsmetri
 include { SUMMARIZE_REPORTS      } from '../../modules/local/summarize/reports'
 include { SUMMARIZE_QUANTIFICATION_CORRECTED        } from '../../modules/local/summarize/quantification_corrected'
 include { SUMMARIZE_INSERTSIZE   } from '../../modules/local/summarize/insertsize'
+include { SUMMARIZE_INTEGRATION  } from '../../modules/local/summarize/integration'
 
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -62,7 +64,7 @@ workflow HPVSEQ {
     take:
     ch_samplesheet         // channel: samplesheet read in from --input
     ch_index               // channel: path(i7_i5 index)
-    ch_bwa_index           // channel: path(bwa_index/) for alignment 
+    ch_bwa_index           // channel: [ meta, path(bwa_index/) ] 
     genome                 //  string: reference genome name, e.g. hg19 
     ch_fasta               // channel: [ meta, path(genome.fasta) ]
     ch_fai                 // channel: [ meta, path(genome.fai) ]
@@ -222,7 +224,10 @@ workflow HPVSEQ {
         ch_cat_fastq
     )
     ch_fastqs = CAT_FASTQ.out.reads
-
+    .map{ meta, reads ->
+        def size_gb = reads.collect { it.size() }.sum() / 1024**3
+        tuple( meta + [ size_gb: size_gb ], reads )
+    }
     //
     // Run or skip trim read length
     // 
@@ -311,12 +316,16 @@ workflow HPVSEQ {
     //
     // MODULE: Run sample swap based on de-dup bam files  
     //
+    ch_checkmate_best_guesses = channel.empty()
     if (!params.skip_checkmate) {
 	ch_checkmate = ch_bam.map { meta, bam, bai -> tuple( meta, bam ) }
 	CHECKMATE (
 	    ch_checkmate,
 	    ch_fasta_fai.first()
 	)
+        ch_checkmate_best_guesses = CHECKMATE.out.best_guesses
+    } else if (!params.skip_genotype_correction) {
+        ch_checkmate_best_guesses = channel.value( file( params.checkmate_best_guesses, checkIfExists: true ) )
     }
  
     //
@@ -392,8 +401,12 @@ workflow HPVSEQ {
     // Report: fragment insert size hg
     ch_insertsize_report_hg   = channel.empty()
     if ( !params.skip_insertsize ){
+        ch_insertsize_hg = ch_alluniquedcs
+        .map { meta, bam, bai ->
+            tuple( meta + [ insertsize: "hg" ], bam, bai )
+        }
         INSERTSIZE_HG (
-            ch_alluniquedcs
+            ch_insertsize_hg
         )
         ch_insertsize_report_hg  = INSERTSIZE_HG.out.metrics.map { meta, file -> file }.collect()
     }
@@ -424,10 +437,13 @@ workflow HPVSEQ {
     //
     ch_integration_report            = channel.empty()
     if (!params.skip_integration && params.skip_genotype_correction) {
-        ch_tag2header_reads_v2 = ch_tag2header_reads
-        .map { meta, reads ->
+        REFORMAT_FASTQ2 (
+            ch_tag2header_reads
+        )
+        ch_tag2header_reads_v2 = REFORMAT_FASTQ2.out.reads 
+        .map { meta, r1, r2 ->
             def cleaned_meta = meta.subMap(['id'])
-            tuple( cleaned_meta, reads ) 
+            tuple( cleaned_meta, [ r1, r2 ] ) 
         }
         ch_quantification_v2 = ch_quantification
         .map { meta, bam_unmapped, genotype_file ->
@@ -444,7 +460,7 @@ workflow HPVSEQ {
             println(it*.getClass())
 	}
         
-        ch_genotype_fasta_fai = ch_integration_input
+        ch_genotype_bwa_index = ch_integration_input
         .map { meta, reads, genotypef ->
             def virus_name = ""
             if (genotypef instanceof Path || genotypef instanceof File) {
@@ -453,17 +469,16 @@ workflow HPVSEQ {
             } else {
                 virus_name = genotypef.toString().trim()
             }
-            def fasta = "${params.ref_path_virus}/${virus_name}/${virus_name}.fasta"
-            def fai   = "${params.ref_path_virus}/${virus_name}/${virus_name}.fasta.fai"
-            tupl( meta + [ virus: virus_name ], file(fasta, checkIfExists: true), file(fai, checkIfExists: true) ) 
+            def index = "${params.ref_path_virus}/${virus_name}/"
+            tuple( meta + [ virus: virus_name ], file(index, checkIfExists: true) ) 
         }
-        ch_integration_input = ch_integration_input.map { meta, reads, genotypef -> tuple( meta, reas ) }
+        ch_integration_input = ch_integration_input.map { meta, reads, genotypef -> tuple( meta, reads ) }
         INTEGRATION_SEARCHPV (
             ch_integration_input,
-            ch_fasta_fai.first(),
-            ch_genotype_fasta_fai 
+            ch_bwa_index,
+            ch_genotype_bwa_index 
         )
-        ch_integration_report = INTEGRATION_SEARCHPV.out.HPVfusionPointContig.collect() 
+        ch_integration_report = INTEGRATION_SEARCHPV.out.HPVfusionPointContigSrNum.collect() 
     }
 
     //
@@ -488,8 +503,12 @@ workflow HPVSEQ {
     // Report: fragment insert size virus on dominant genotype
     ch_insertsize_report_dominant_virus   = channel.empty()
     if ( !params.skip_insertsize ){
+        ch_insertsize_dominant = ch_quantification_reads
+        .map { meta, bam, bai ->
+            tuple( meta + [ insertsize: "dominant" ], bam, bai )
+        }
         INSERTSIZE_DOMINANT (
-            ch_quantification_reads
+            ch_insertsize_dominant
         )
         ch_insertsize_report_dominant_virus  = INSERTSIZE_DOMINANT.out.metrics.map { meta, file -> file }.collect()
     }
@@ -519,7 +538,8 @@ workflow HPVSEQ {
         INPUT_QUANTIFICATION_CORRECTED (
             ch_quantification_corrected_unmapped,
             ch_baseline_info,
-            CHECKMATE.out.best_guesses
+            //CHECKMATE.out.best_guesses
+            ch_checkmate_best_guesses
         )
         ch_quantification_corrected = INPUT_QUANTIFICATION_CORRECTED.out.quantification_corrected_input
 
@@ -527,6 +547,8 @@ workflow HPVSEQ {
             ch_quantification_corrected
         )
         ch_quantification_corrected_virus_input = QUANTIFICATION_CORRECTED.out.bam_alluniquedcs.join(QUANTIFICATION_CORRECTED.out.bai_alluniquedcs)
+        ch_quantification_corrected_virus_input = ch_quantification_corrected_virus_input
+        .map { meta, bam, bai -> tuple( meta + [ consensus: "all.unique.dcs"], bam, bai ) }
         ch_genotype_corrected_fasta_fai = QUANTIFICATION_CORRECTED.out.fasta_fai_genotype
 
         // Report: Quantification coverage (with -f 2) on baseline-corrected genotype
@@ -541,8 +563,12 @@ workflow HPVSEQ {
 
         // Report: fragment insert size virus on corrected genotype
         if ( !params.skip_insertsize ){
+            ch_insertsize_corrected = ch_quantification_corrected_virus_input
+            .map { meta, bam, bai ->
+                tuple( meta + [ insertsize: "corrected" ], bam, bai )
+            }
             INSERTSIZE_CORRECTED (
-                ch_quantification_corrected_virus_input
+                ch_insertsize_corrected
             )
             ch_insertsize_report_corrected_virus  = INSERTSIZE_CORRECTED.out.metrics.map { meta, file -> file }.collect()
         }
@@ -553,10 +579,13 @@ workflow HPVSEQ {
     //
 
     if (!params.skip_integration && !params.skip_genotype_correction) {
-        ch_tag2header_reads_v2 = ch_tag2header_reads
-        .map { meta, reads ->
+        REFORMAT_FASTQ2 (
+            ch_tag2header_reads
+        )
+        ch_tag2header_reads_v2 = REFORMAT_FASTQ2.out.reads 
+        .map { meta, r1, r2 ->
             def cleaned_meta = meta.subMap(['id'])
-            tuple( cleaned_meta, reads ) 
+            tuple( cleaned_meta, [ r1, r2 ] ) 
         }
         ch_quantification_v2 = ch_quantification_corrected
         .map { meta, bam_unmapped, genotype ->
@@ -572,7 +601,7 @@ workflow HPVSEQ {
             println(it)
             println(it*.getClass())
         }
-        ch_genotype_fasta_fai = ch_integration_input
+        ch_genotype_bwa_index = ch_integration_input
         .map { meta, reads, genotype ->
             def virus_name = ""
             if (genotype instanceof Path || genotype instanceof File) {
@@ -581,21 +610,24 @@ workflow HPVSEQ {
             } else {
                 virus_name = genotype.toString().trim()
             }
-            def fasta_genotype = "${params.ref_path_virus}/${virus_name}/${virus_name}.fasta"
-            def fai_genotype   = "${params.ref_path_virus}/${virus_name}/${virus_name}.fasta.fai"
-            tuple( meta + [ virus: virus_name ], file(fasta_genotype, checkIfExists: true), file(fai_genotype, checkIfExists: true) ) 
+            def index = "${params.ref_path_virus}/${virus_name}/"
+            tuple( meta + [ virus: virus_name ], file(index, checkIfExists: true) ) 
         }
-        ch_genotype_fasta_fai.view { it -> 
+        ch_bwa_index.view { it -> 
+            println(it)
+            println(it*.getClass())
+        }
+        ch_genotype_bwa_index.view { it -> 
             println(it)
             println(it*.getClass())
         }
         ch_integration_input = ch_integration_input.map { meta, reads, genotype -> tuple( meta, reads ) }
         INTEGRATION_SEARCHPV (
             ch_integration_input,
-            ch_fasta_fai.first(),
-            ch_genotype_fasta_fai 
+            ch_bwa_index,
+            ch_genotype_bwa_index 
         ) 
-        ch_integration_report = INTEGRATION_SEARCHPV.out.HPVfusionPointContig.collect() 
+        ch_integration_report = INTEGRATION_SEARCHPV.out.HPVfusionPointContigSrNum.collect() 
     }
 
     //
@@ -643,6 +675,11 @@ workflow HPVSEQ {
             ch_insertsize_report_hg,
             ch_insertsize_report_dominant_virus,
             ch_insertsize_report_corrected_virus
+        )     
+    }
+    if ( !params.skip_integration ) {
+        SUMMARIZE_INTEGRATION (
+            ch_integration_report
         )     
     }
 
