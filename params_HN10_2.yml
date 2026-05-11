@@ -16,10 +16,10 @@ library: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10_2/lib.txt"
 skip_fastqc: false
 skip_multiqc: false
 skip_trim_read: true
-skip_checkmate: false 
+skip_checkmate: true 
 skip_genotyping: false
 skip_insertsize: false 
-skip_integration: false 
+skip_integration: true
 skip_genotype_correction: false 
 
 # Preparation 
@@ -43,6 +43,7 @@ genome_genotyping: "HPV_38genomes"
 ref_path_virus: "/cluster/projects/scottgroup/people/jinfeng/data/HPVs"
 genotypes: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/data/HPV_38genomes.ref.txt"
 
+checkmate_best_guesses: "/cluster/projects/scottgroup/people/jinfeng/HPV-seq/HN10_2/best_guesses.pval_out.txt"
 baseline_name: "A-SCREEN"
 buffycoat_name: "None"
 
