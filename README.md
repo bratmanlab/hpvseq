@@ -141,9 +141,16 @@ For more details about the output files and reports, please refer to the
 
 Check completeness on output files and logs
 .
-├── ConsensusCruncher ❓ 
+├── ConsensusCruncher ❓
+│   ├── hg ❓
+│   ├── genotyping ❓
+│   ├── dominant genotypes ❓
+│   └── corrected genotypes ❓
 ├── Integration ❓
+│   └── on dominant or corrected genotypes ❓
 ├── Insert size ❓
+│   ├── dominant genotypes ❓
+│   └── corrected genotypes ❓
 
 ```
 
