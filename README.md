@@ -182,7 +182,9 @@ Check completeness and failures on output files and logs
 ## Dependencies
 
 SMaSH: https://github.com/rbundschuh/SMaSH
+
 ConsensusCruncher: https://github.com/pughlab/ConsensusCruncher
+
 SearcHPV: https://github.com/WenjinGudaisy/SearcHPV
 
 ## Credits
