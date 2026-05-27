@@ -77,6 +77,7 @@ For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/hpvseq/output).
 
 ```text
+Flow
 .   
 ├── fastq or SRA? ✅  
 ├── Pre-QC 
@@ -86,7 +87,7 @@ For more details about the output files and reports, please refer to the
 │   └── MultiQC
 │       └── [ Report: QC Sequencing ] ✅
 ├── Post-QC 
-│   ├── Trim read length? [ included but not tested yet ] ❓ 
+│   ├── Trim read length? [ included but not tested yet ] ✅ 
 │   └── Merge fastq files? ✅ 
 ├── Alignment to human genome
 │   ├── [ Report: QC coverage ] ✅
@@ -137,10 +138,34 @@ For more details about the output files and reports, please refer to the
 │   └── if no genotype correction
 │       └── [ Report: Insert size metrics on dominant genotype (-f 2) ] ✅
 └── Genome-level distribution of depth of coverage for virus
-    └── [ Report: depth of coverage per bp ] ❓ 
+    └── [ Report: depth of coverage/bp ] ❓ 
 
-Check completeness on output files and logs
+Output
 .
+├── multiqc
+│   └── multiqc_data
+├── tag_to_header
+├── bwa
+├── consensus
+│   ├── hg19 
+│   ├── HPV_38genomes
+│   ├── corrected
+│   └── dominant 
+├── report
+│   ├── coverage
+│   ├── genotyping
+│   ├── hsmetrics
+│   ├── insertsize
+│   ├── integration
+│   └── smash
+├── summary
+└── logs 
+
+
+Check completeness and failures on output files and logs
+.
+├── Alignment (as basis)
+│   └── bwa 
 ├── ConsensusCruncher ❓
 │   ├── hg ❓
 │   ├── genotyping ❓
