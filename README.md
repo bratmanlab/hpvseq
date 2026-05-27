@@ -21,7 +21,7 @@
 
 ## Introduction
 
-**bratmanlab/hpvseq** is a bioinformatics nextflow pipeline including HPV DNA detection, HPV genotyping and quantification, integration detection, fragment insert size estimation and variant calling on **dual-UMIs** and **paired-end** barcoding sequencing data by demultiplexing method of ConsensusCruncher (https://github.com/pughlab/ConsensusCruncher). It is tested on HPC, and will be on cloud in future. 
+**bratmanlab/hpvseq** is a bioinformatics nextflow pipeline including HPV DNA detection, HPV genotyping and quantification, integration detection, fragment insert size estimation and variant calling on **dual-UMIs** and **paired-end barcoding sequencing** data by demultiplexing method of ConsensusCruncher (https://github.com/pughlab/ConsensusCruncher). It is tested on HPC, and will be on cloud in future. 
 
 <!-- TODO bratmanlab:
    Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
@@ -70,7 +70,7 @@ nextflow run bratmanlab/hpvseq \
 
 For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/hpvseq/usage) and the [parameter documentation](https://nf-co.re/hpvseq/parameters).
 
-## Pipeline output
+## Pipeline 
 
 To see the results of an example test run with a full size dataset refer to the [results](https://nf-co.re/hpvseq/results) tab on the bratmanlab website pipeline page.
 For more details about the output files and reports, please refer to the
@@ -178,6 +178,12 @@ Check completeness and failures on output files and logs
 │   └── corrected genotypes ❓
 
 ```
+
+## Dependencies
+
+SMaSH: https://github.com/rbundschuh/SMaSH
+ConsensusCruncher: https://github.com/pughlab/ConsensusCruncher
+SearcHPV: https://github.com/WenjinGudaisy/SearcHPV
 
 ## Credits
 
