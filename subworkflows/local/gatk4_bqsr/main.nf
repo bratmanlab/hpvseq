@@ -53,14 +53,19 @@ workflow GATK4_BQSR {
     // Sort, index BAM file 
     //
     ch_fasta_fai = fasta.join(fai)
-    //BAM_SORT_STATS_SAMTOOLS_BQSR(GATK4_APPLYBQSR.out.bam, ch_fasta_fai)
+    ch_bqsr = GATK4_APPLYBQSR.out.bam
+    .combine(ch_fasta_fai)
+    .map { meta, bam, meta2, fasta, fai ->
+        tuple( meta, bam, fasta, fai )
+    } 
     SORT_BQSR(
-        GATK4_APPLYBQSR.out.bam, 
-        GATK4_APPLYBQSR.out.bam
-        .combine(ch_fasta_fai)
-        .map { meta_id, bam, meta_genome, fasta, fai ->
-            [ meta_id, fasta, fai ]
-        },
+        ch_bqsr,
+        //GATK4_APPLYBQSR.out.bam, 
+        //GATK4_APPLYBQSR.out.bam
+        //.combine(ch_fasta_fai)
+        //.map { meta_id, bam, meta_genome, fasta, fai ->
+        //    [ meta_id, fasta, fai ]
+        //},
         ''
     )
     ch_bam_bqsr = SORT_BQSR.out.bam

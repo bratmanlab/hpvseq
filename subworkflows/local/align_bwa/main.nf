@@ -23,6 +23,7 @@ def getBwaPercentMapped(align_flagstat) {
 
 workflow ALIGN_BWA {
     take:
+    //input         // channel: [ val(meta), [ reads ], index, fasta, fai ]
     reads         // channel: [ val(meta), [ reads ] ]
     index         // channel: [ val(meta2), /path/to/bwa/index/ ]
     fasta         // channel: [ val(meta2), path(fasta), path(fai) ]
@@ -32,11 +33,16 @@ workflow ALIGN_BWA {
     //
     // Map reads with BWA MEM
     //
+    ch_references = index.join(fasta)
+    ch_fastq = reads.combine( ch_references )
+    .map { meta, reads, meta2, index, fasta, fai ->
+        tuple( meta, reads, index, [], [] )
+    }
+
     BWA_MEM(
-        reads,
-        //index.map { index_path -> [ [id: 'genome'], index_path ] },
-        index,
-        [ [:], [] ],    // No fasta needed for BAM output
+        ch_fastq, 
+        //index,
+        //[ [:], [] ],    // No fasta needed for BAM output
         false           // sort_bam - we'll sort with samtools for consistency
     )
     ch_orig_bam = BWA_MEM.out.bam
@@ -45,13 +51,19 @@ workflow ALIGN_BWA {
     // Sort, index BAM file and run samtools stats, flagstat and idxstats
     //
     //BAM_SORT_STATS_SAMTOOLS(ch_orig_bam, fasta)
+    ch_bam_sort_stats = ch_orig_bam
+    .combine(fasta)
+    .map { meta, bam, meta2, fasta, fai ->
+        tuple( meta, bam, fasta, fai )
+    }
     BAM_SORT_STATS_SAMTOOLS(
-        ch_orig_bam, 
-        ch_orig_bam
-        .combine(fasta)
-        .map { meta_id, bam, meta_genome, fasta, fai ->
-            [ meta_id, fasta, fai]
-        }.first() 
+        ch_bam_sort_stats
+        //ch_orig_bam, 
+        //ch_orig_bam
+        //.combine(fasta)
+        //.map { meta_id, bam, meta_genome, fasta, fai ->
+        //    [ meta_id, fasta, fai]
+        //}.first() 
     ) 
     ch_flagstat = BAM_SORT_STATS_SAMTOOLS.out.flagstat
 
