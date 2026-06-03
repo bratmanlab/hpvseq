@@ -110,6 +110,7 @@ workflow {
     ch_bwa_index          = channel.value([ [id: params.genome], file(params.bwa_index, checkIfExists: true) ])
     ch_bed                = channel.value([ [id: params.genome], file(params.bed, checkIfExists: true) ])
     // Virus genome
+/*
     file_genotyping_fasta = file(params.genomes[params.genome_genotyping].fasta, checkIfExists: true)
     file_genotyping_fai   = file(params.genomes[params.genome_genotyping].fai, checkIfExists: true)
     def file_genotyping_cytoband = params.genomes[params.genome_genotyping].bwa_index + params.genome_genotyping + ".cytoband"
@@ -117,6 +118,7 @@ workflow {
     ch_genotyping_fai     = channel.value([ [id: params.genome_genotyping], file_genotyping_fai ])
     ch_genotyping_cytoband     = channel.value([ [id: params.genome_genotyping], file(file_genotyping_cytoband, checkIfExists: true) ])
     ch_genotyping_index   = channel.value(file(params.genomes[params.genome_genotyping].bwa_index, checkIfExists: true))
+*/
     ch_genotypes   = channel.value([ [id: "genotypes"], file(params.genotypes, checkIfExists: true) ])
 /*
     ch_genotyping_cytoband.view { meta, path -> 
@@ -173,10 +175,10 @@ workflow {
         params.consensuscruncher_dir,
         ch_known_sites,
         ch_known_sites_tbi,
-        ch_genotyping_index,
-        ch_genotyping_fasta,
-        ch_genotyping_fai,
-        ch_genotyping_cytoband,
+        //ch_genotyping_index,
+        //ch_genotyping_fasta,
+        //ch_genotyping_fai,
+        //ch_genotyping_cytoband,
         ch_genotypes
     )
     //

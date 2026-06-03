@@ -47,8 +47,8 @@ include { INPUT_QUANTIFICATION_CORRECTED             } from '../../subworkflows/
 include { QUANTIFICATION as QUANTIFICATION_DOMINANT  } from '../../subworkflows/local/quantification'
 include { QUANTIFICATION as QUANTIFICATION_CORRECTED } from '../../subworkflows/local/quantification'
 include { COVERAGE_QUANTIFICATION_DOMINANT_F2 as COVERAGE_QUANTIFICATION_HG    } from '../../subworkflows/local/coverage_quantification_dominant_f2'
-include { COVERAGE_QUANTIFICATION_DOMINANT_F2 as COVERAGE_QUANTIFICATION_VIRUS } from '../../subworkflows/local/coverage_quantification_dominant_f2'
-include { COVERAGE_QUANTIFICATION_CORRECTED_F2 as COVERAGE_QUANTIFICATION_CORRECTED_VIRUS } from '../../subworkflows/local/coverage_quantification_corrected_f2'
+include { COVERAGE_QUANTIFICATION_DOMINANT_F2 as COVERAGE_QUANTIFICATION_VIRUS_DOMINANT } from '../../subworkflows/local/coverage_quantification_dominant_f2'
+include { COVERAGE_QUANTIFICATION_CORRECTED_F2 as COVERAGE_QUANTIFICATION_VIRUS_CORRECTED } from '../../subworkflows/local/coverage_quantification_corrected_f2'
 include { INSERTSIZE as INSERTSIZE_HG         } from '../../subworkflows/local/insertsize'
 include { INSERTSIZE as INSERTSIZE_DOMINANT   } from '../../subworkflows/local/insertsize'
 include { INSERTSIZE as INSERTSIZE_CORRECTED  } from '../../subworkflows/local/insertsize'
@@ -74,10 +74,10 @@ workflow HPVSEQ {
     consensuscruncher_dir  //  string: path(consensuscruncher) 
     ch_known_sites         // channel: [ meta, path(known_sites) ]
     ch_known_sites_tbi     // channel: [ meta, path(known_sites_tbi) ]
-    ch_genotyping_index    // channel: [ meta2, path(genotyping index) ] - for alignment for genotyping 
-    ch_genotyping_fasta    // channel: [ meta2, path(genotyping fasta) ] - for alignment for genotyping 
-    ch_genotyping_fai      // channel: [ meta2, path(genotyping fai) ] - for alignment for genotyping 
-    ch_genotyping_cytoband    // channel: [ meta2,path(genotyping cytoband) ] - for alignment for genotyping 
+    //ch_genotyping_index    // channel: [ meta2, path(genotyping index) ] - for alignment for genotyping 
+    //ch_genotyping_fasta    // channel: [ meta2, path(genotyping fasta) ] - for alignment for genotyping 
+    //ch_genotyping_fai      // channel: [ meta2, path(genotyping fai) ] - for alignment for genotyping 
+    //ch_genotyping_cytoband    // channel: [ meta2,path(genotyping cytoband) ] - for alignment for genotyping 
     ch_genotypes           // channel: [ meta3, path(genotypes) ] - for alignment for detected genotype
 
     main:
@@ -232,7 +232,7 @@ workflow HPVSEQ {
     // Run or skip trim read length
     // 
     if ( !params.skip_trim_read ) {
-        FASTQP (
+        FASTP (
 	    ch_fastqs.map { meta, reads -> tuple( meta, reads, [] ) }, // meta, reads, adapter
 	    false, // discard_trimmed_pass (keep the data)
 	    false, // save_trimmed_fail (don't save bad reads)
@@ -292,12 +292,19 @@ workflow HPVSEQ {
         [ [:], [] ]    
     ) 
 
-    // Report: QC coverage (without -f 2) 
+    // Report: QC coverage (without -f 2)
+    ch_references = ch_fasta_fai
+    .join(ch_dict)
+    .join(ch_bed)
+    ch_bam_coverage = ch_bam.combine(ch_references)
+    .map { meta, bam, bai, meta2, fasta, fai, dict, bed ->
+        tuple( meta, bam, bai, fasta, fai, dict, bed )
+    }
     COVERAGE_QC_BWA (
-        ch_bam,
-        ch_fasta_fai.first(),
-        ch_dict,
-        ch_bed
+        ch_bam_coverage
+        //ch_fasta_fai.first(),
+        //ch_dict,
+        //ch_bed
     )
 
     // Summary: if skip_genotyping
@@ -352,25 +359,16 @@ workflow HPVSEQ {
     //
     // ConsensusCruncher:HG
     //
+    def file_cytoband = file("${params.consensuscruncher_dir}/ConsensusCruncher/${params.genome}_cytoBand.txt", checkIfExists: true)
     ch_cc_hg = GATK4_BQSR.out.bam
-       .join(GATK4_BQSR.out.bai)
-    file_cytoband = file("${params.consensuscruncher_dir}/ConsensusCruncher/${params.genome}_cytoBand.txt", checkIfExists: true)
-    ch_cytoband = channel.value( [ [id: params.genome], file_cytoband ] )
-/*
-    ch_cc_hg.view { meta, bam, bai -> 
-	"""
-	Sample ID: ${meta.id}
-	Reference: ${meta.ref}
-	BAM type : ${meta.type}
-	BAM Path : ${bam}
-	BAI Path : ${bai}
-	-----------------
-	""".stripIndent()
+    .join(GATK4_BQSR.out.bai)
+    .map { meta, bam, bai ->
+        tuple( meta + [ cc_type: "hg" ], bam, bai, file_cytoband)
     }
-*/    
+    //ch_cytoband = channel.value( [ [id: params.genome], file_cytoband ] )
     CONSENSUSCRUNCHER (
-        ch_cc_hg,
-        ch_cytoband
+        ch_cc_hg
+        //ch_cytoband
     )
     ch_dcs           = CONSENSUSCRUNCHER.out.bam_dcs.join(CONSENSUSCRUNCHER.out.bai_dcs)
     ch_dcssc         = CONSENSUSCRUNCHER.out.bam_dcssc.join(CONSENSUSCRUNCHER.out.bai_dcssc)
@@ -384,18 +382,53 @@ workflow HPVSEQ {
     ch_alluniquedcs  = ch_alluniquedcs.map { meta, bam, bai -> tuple( meta + [ consensus: "all.unique.dcs" ], bam ,bai ) }
 
     // Report: QC coverage (without -f 2)
+    ch_dcs_coverage          = ch_dcs.combine(ch_references)
+    .map { meta, bam, bai, meta2, fasta, fai, dict, bed ->
+        tuple( meta, bam, bai, fasta, fai, dict, bed )
+    }
+    ch_dcssc_coverage        = ch_dcssc.combine(ch_references)
+    .map { meta, bam, bai, meta2, fasta, fai, dict, bed ->
+        tuple( meta, bam, bai, fasta, fai, dict, bed )
+    }
+    ch_sscs_coverage         = ch_sscs.combine(ch_references)
+    .map { meta, bam, bai, meta2, fasta, fai, dict, bed ->
+        tuple( meta, bam, bai, fasta, fai, dict, bed )
+    }
+    ch_sscssc_coverage       = ch_sscssc.combine(ch_references) 
+    .map { meta, bam, bai, meta2, fasta, fai, dict, bed ->
+        tuple( meta, bam, bai, fasta, fai, dict, bed )
+    }
+    ch_alluniquedcs_coverage = ch_alluniquedcs.combine(ch_references)
+    .map { meta, bam, bai, meta2, fasta, fai, dict, bed ->
+        tuple( meta, bam, bai, fasta, fai, dict, bed )
+    }
+    COVERAGE_QC_DCS ( ch_dcs_coverage )
+    COVERAGE_QC_DCSSC ( ch_dcssc_coverage )
+    COVERAGE_QC_SSCS ( ch_sscs_coverage )
+    COVERAGE_QC_SSCSSC ( ch_sscssc_coverage)
+    COVERAGE_QC_ALLUNIQUEDCS ( ch_alluniquedcs_coverage )
+/* 
     COVERAGE_QC_DCS ( ch_dcs, ch_fasta_fai.first(), ch_dict, ch_bed)
     COVERAGE_QC_DCSSC ( ch_dcssc, ch_fasta_fai.first(), ch_dict, ch_bed)
     COVERAGE_QC_SSCS ( ch_sscs, ch_fasta_fai.first(), ch_dict, ch_bed)
     COVERAGE_QC_SSCSSC ( ch_sscssc, ch_fasta_fai.first(), ch_dict, ch_bed)
     COVERAGE_QC_ALLUNIQUEDCS ( ch_alluniquedcs, ch_fasta_fai.first(), ch_dict, ch_bed)
-
+*/
     // Report: coverage quantification hg
+    ch_genome = ch_fasta_fai
+    .join( ch_dict )
+    .join( ch_bed )
+    ch_alluniquedcs_quantification_hg = ch_alluniquedcs
+    .combine( ch_genome )
+    .map { meta, bam, bai, meta2, fasta, fai, dict, bed ->
+        tuple( meta, bam, bai, fasta, fai, dict, bed )
+    }
     COVERAGE_QUANTIFICATION_HG (
-        ch_alluniquedcs,
-        ch_fasta_fai.first(),
-        ch_dict,
-        ch_bed 
+        ch_alluniquedcs_quantification_hg
+        //ch_alluniquedcs
+        //ch_fasta_fai.first(),
+        //ch_dict,
+        //ch_bed 
     )
 
     // Report: fragment insert size hg
@@ -414,16 +447,26 @@ workflow HPVSEQ {
     //
     // MODULE: Run genotyping 
     //
-    ch_genotyping_fasta_fai              = ch_genotyping_fasta.join(ch_genotyping_fai)
+    //ch_genotyping_fasta_fai              = ch_genotyping_fasta.join(ch_genotyping_fai)
     ch_quantification                    = channel.empty()
     ch_quantification_corrected_unmapped = channel.empty() 
     ch_genotyping_report                 = channel.empty()
     if (!params.skip_genotyping) {
+        ch_genotyping = ch_bam
+        .map { meta, bam, bai -> 
+	    def file_genotyping_fasta = file(params.genomes[params.genome_genotyping].fasta, checkIfExists: true)
+	    def file_genotyping_fai   = file(params.genomes[params.genome_genotyping].fai, checkIfExists: true)
+	    def file_genotyping_cytoband = params.genomes[params.genome_genotyping].bwa_index + params.genome_genotyping + ".cytoband"
+	    file_genotyping_index     = file(params.genomes[params.genome_genotyping].bwa_index, checkIfExists: true)
+            tuple( meta, bam, bai, file_genotyping_index, file_genotyping_fasta, file_genotyping_fai, file_genotyping_cytoband)
+        }
 	GENOTYPING (
-	    ch_bam,
-	    ch_genotyping_index, 
-	    ch_genotyping_fasta_fai,
-	    ch_genotyping_cytoband,
+            ch_genotyping,
+	    //ch_bam,
+	//    file_genotyping_index, 
+	  //  file_genotyping_fasta,
+	    //file_genotyping_fai,
+	    //file_genotyping_cytoband,
 	    ch_genotypes
 	)
 
@@ -446,37 +489,21 @@ workflow HPVSEQ {
             tuple( cleaned_meta, [ r1, r2 ] ) 
         }
         ch_quantification_v2 = ch_quantification
-        .map { meta, bam_unmapped, genotype_file ->
+        .map { meta, bam_unmapped ->
+            def index = "${params.ref_path_virus}/${meta.virus}/"
             def cleaned_meta = meta.subMap(['id'])
-            tuple( cleaned_meta, genotype_file )
+            tuple( cleaned_meta, bam_unmapped, file(index, checkIfExists: true) )
         }
         ch_integration_input = ch_quantification_v2
         .join(ch_tag2header_reads_v2)
-        .map { meta, genotype_file, reads ->
-            tuple( meta, reads, genotype_file ) 
+        .map { meta, bam_unmapped, index, reads ->
+            def virus_name = index.name 
+            tuple( meta + [ virus: virus_name ], reads, index ) 
         }
-	ch_integration_input.view { it ->
-            println(it)
-            println(it*.getClass())
-	}
-        
-        ch_genotype_bwa_index = ch_integration_input
-        .map { meta, reads, genotypef ->
-            def virus_name = ""
-            if (genotypef instanceof Path || genotypef instanceof File) {
-                def lines = genotypef.readLines()
-                virus_name = lines ? lines[0].trim() : null
-            } else {
-                virus_name = genotypef.toString().trim()
-            }
-            def index = "${params.ref_path_virus}/${virus_name}/"
-            tuple( meta + [ virus: virus_name ], file(index, checkIfExists: true) ) 
-        }
-        ch_integration_input = ch_integration_input.map { meta, reads, genotypef -> tuple( meta, reads ) }
         INTEGRATION_SEARCHPV (
             ch_integration_input,
-            ch_bwa_index,
-            ch_genotype_bwa_index 
+            ch_bwa_index
+            //ch_genotype_bwa_index 
         )
         ch_integration_report = INTEGRATION_SEARCHPV.out.HPVfusionPointContigSrNum.collect() 
     }
@@ -484,28 +511,36 @@ workflow HPVSEQ {
     //
     // QUANTIFICATION: re-align unmapped reads on given genotype
     //
+    ch_quantification = ch_quantification.map { meta, bam -> tuple( meta + [ cc_type: "dominant" ], bam ) }
     QUANTIFICATION_DOMINANT (
         ch_quantification
     )
-
-    ch_quantification_reads = QUANTIFICATION_DOMINANT.out.bam_alluniquedcs.join(QUANTIFICATION_DOMINANT.out.bai_alluniquedcs)
-    ch_quantification_reads = ch_quantification_reads
-    .map { meta, bam, bai -> tuple( meta + [ consensus: "all.unique.dcs"], bam, bai ) }
-
+    ch_quantification_dominant = QUANTIFICATION_DOMINANT.out.bam_alluniquedcs
+    .join( QUANTIFICATION_DOMINANT.out.bai_alluniquedcs )
+    .map { meta, bam, bai ->
+        def virus_name = meta.ref2
+        def fasta      = file("${params.ref_path_virus}/${virus_name}/${virus_name}.fasta", checkIfExists: true )
+        def fai        = file("${params.ref_path_virus}/${virus_name}/${virus_name}.fasta.fai", checkIfExists: true )
+        def dict       = file("${params.ref_path_virus}/${virus_name}/${virus_name}.dict", checkIfExists: true )
+        def bed        = file("${params.ref_path_virus}/${virus_name}/${virus_name}_E6E7.bed")
+        def empty_bed  = file("${params.ref_path_virus}/empty.bed")
+        bed            = bed.exists() ? bed : empty_bed
+        tuple( meta, bam, bai, fasta, fai, dict, bed ) 
+    }
     // Report: Quantification coverage (with -f 2)
-    COVERAGE_QUANTIFICATION_VIRUS (
-        ch_quantification_reads,
-        QUANTIFICATION_DOMINANT.out.fasta_fai_genotype,
-        QUANTIFICATION_DOMINANT.out.dict_genotype,
-        QUANTIFICATION_DOMINANT.out.bed_genotype
+    COVERAGE_QUANTIFICATION_VIRUS_DOMINANT (
+        ch_quantification_dominant
+        //QUANTIFICATION_DOMINANT.out.fasta_fai_genotype,
+        //QUANTIFICATION_DOMINANT.out.dict_genotype,
+        //QUANTIFICATION_DOMINANT.out.bed_genotype
     )
  
     // Report: fragment insert size virus on dominant genotype
     ch_insertsize_report_dominant_virus   = channel.empty()
-    if ( !params.skip_insertsize ){
-        ch_insertsize_dominant = ch_quantification_reads
-        .map { meta, bam, bai ->
-            tuple( meta + [ insertsize: "dominant" ], bam, bai )
+    if ( !params.skip_insertsize && params.skip_genotype_correction ){
+        ch_insertsize_dominant = ch_quantification_dominant
+        .map { meta, bam, bai, fasta, fai, dict, bed ->
+            tuple( meta + [ consensus: "all.unique.dcs", insertsize: "dominant" ], bam, bai )
         }
         INSERTSIZE_DOMINANT (
             ch_insertsize_dominant
@@ -521,14 +556,14 @@ workflow HPVSEQ {
     ch_insertsize_report_corrected_virus       = channel.empty()
     if ( !params.skip_genotype_correction ) {
         ch_quantification
-        .branch { meta, bam_unmapped, genotype_file ->
+        .branch { meta, bam_unmapped ->
             baseline : meta.tp == params.baseline_name
             others   : meta.tp != params.baseline_name
         }
         .set { ch_genotype_correction }
         ch_baseline_info = ch_genotype_correction.baseline
-        .map { meta, bam_unmapped, genotype_file ->
-            tuple( meta.id, genotype_file.text.trim() ) 
+        .map { meta, bam_unmapped ->
+            tuple( meta.id, meta.virus ) 
         }
         .toList()
         .map { list ->
@@ -542,30 +577,39 @@ workflow HPVSEQ {
             ch_checkmate_best_guesses
         )
         ch_quantification_corrected = INPUT_QUANTIFICATION_CORRECTED.out.quantification_corrected_input
+        .map { meta, bam -> tuple( meta + [ cc_type: "corrected" ], bam ) }
 
         QUANTIFICATION_CORRECTED (
             ch_quantification_corrected
         )
-        ch_quantification_corrected_virus_input = QUANTIFICATION_CORRECTED.out.bam_alluniquedcs.join(QUANTIFICATION_CORRECTED.out.bai_alluniquedcs)
-        ch_quantification_corrected_virus_input = ch_quantification_corrected_virus_input
-        .map { meta, bam, bai -> tuple( meta + [ consensus: "all.unique.dcs"], bam, bai ) }
-        ch_genotype_corrected_fasta_fai = QUANTIFICATION_CORRECTED.out.fasta_fai_genotype
+	ch_coverage_corrected = QUANTIFICATION_CORRECTED.out.bam_alluniquedcs
+	.join( QUANTIFICATION_CORRECTED.out.bai_alluniquedcs )
+	.map { meta, bam, bai ->
+	    def virus_name = meta.ref2
+	    def fasta      = file("${params.ref_path_virus}/${virus_name}/${virus_name}.fasta", checkIfExists: true )
+	    def fai        = file("${params.ref_path_virus}/${virus_name}/${virus_name}.fasta.fai", checkIfExists: true )
+	    def dict       = file("${params.ref_path_virus}/${virus_name}/${virus_name}.dict", checkIfExists: true )
+	    def bed        = file("${params.ref_path_virus}/${virus_name}/${virus_name}_E6E7.bed")
+	    def empty_bed  = file("${params.ref_path_virus}/empty.bed")
+	    bed            = bed.exists() ? bed : empty_bed
+	    tuple( meta, bam, bai, fasta, fai, dict, bed )
+	}
 
         // Report: Quantification coverage (with -f 2) on baseline-corrected genotype
-        COVERAGE_QUANTIFICATION_CORRECTED_VIRUS (
-            ch_quantification_corrected_virus_input,
-            ch_genotype_corrected_fasta_fai,
-            QUANTIFICATION_CORRECTED.out.dict_genotype,
-            QUANTIFICATION_CORRECTED.out.bed_genotype
+        COVERAGE_QUANTIFICATION_VIRUS_CORRECTED (
+            ch_coverage_corrected
+            //ch_genotype_corrected_fasta_fai,
+            //QUANTIFICATION_CORRECTED.out.dict_genotype,
+            //QUANTIFICATION_CORRECTED.out.bed_genotype
         )
-        ch_coverage_quantification_corrected_virus = COVERAGE_QUANTIFICATION_CORRECTED_VIRUS.out.summary.collect()
+        ch_coverage_quantification_corrected_virus = COVERAGE_QUANTIFICATION_VIRUS_CORRECTED.out.summary.collect()
         ch_read_families_corrected_virus = QUANTIFICATION_CORRECTED.out.read_families.collect()
 
         // Report: fragment insert size virus on corrected genotype
-        if ( !params.skip_insertsize ){
-            ch_insertsize_corrected = ch_quantification_corrected_virus_input
-            .map { meta, bam, bai ->
-                tuple( meta + [ insertsize: "corrected" ], bam, bai )
+        if ( !params.skip_insertsize && !params.skip_genotype_correction ){
+            ch_insertsize_corrected = ch_coverage_corrected
+            .map { meta, bam, bai, fasta, fai, dict, bed ->
+                tuple( meta + [ consensus: "all.unique.dcs", insertsize: "corrected" ], bam, bai )
             }
             INSERTSIZE_CORRECTED (
                 ch_insertsize_corrected
@@ -588,44 +632,21 @@ workflow HPVSEQ {
             tuple( cleaned_meta, [ r1, r2 ] ) 
         }
         ch_quantification_v2 = ch_quantification_corrected
-        .map { meta, bam_unmapped, genotype ->
+        .map { meta, bam_unmapped ->
+            def index = "${params.ref_path_virus}/${meta.virus}/"
             def cleaned_meta = meta.subMap(['id'])
-            tuple( cleaned_meta, genotype ) 
+            tuple( cleaned_meta, bam_unmapped, file(index, checkIfExists: true) ) 
         }
         ch_integration_input = ch_quantification_v2
         .join(ch_tag2header_reads_v2)
-        .map { meta, genotype, reads ->
-            tuple( meta, reads, genotype ) 
+        .map { meta, bam_unmapped, index, reads ->
+            def virus_name = index.name 
+            tuple( meta + [ virus: virus_name ], reads, index ) 
         }
-        ch_integration_input.view { it -> 
-            println(it)
-            println(it*.getClass())
-        }
-        ch_genotype_bwa_index = ch_integration_input
-        .map { meta, reads, genotype ->
-            def virus_name = ""
-            if (genotype instanceof Path || genotype instanceof File) {
-                def lines = genotype.readLines()
-                virus_name = lines ? lines[0].trim() : null
-            } else {
-                virus_name = genotype.toString().trim()
-            }
-            def index = "${params.ref_path_virus}/${virus_name}/"
-            tuple( meta + [ virus: virus_name ], file(index, checkIfExists: true) ) 
-        }
-        ch_bwa_index.view { it -> 
-            println(it)
-            println(it*.getClass())
-        }
-        ch_genotype_bwa_index.view { it -> 
-            println(it)
-            println(it*.getClass())
-        }
-        ch_integration_input = ch_integration_input.map { meta, reads, genotype -> tuple( meta, reads ) }
         INTEGRATION_SEARCHPV (
             ch_integration_input,
-            ch_bwa_index,
-            ch_genotype_bwa_index 
+            ch_bwa_index
+            //ch_genotype_bwa_index 
         ) 
         ch_integration_report = INTEGRATION_SEARCHPV.out.HPVfusionPointContigSrNum.collect() 
     }
@@ -643,7 +664,7 @@ workflow HPVSEQ {
     genotypes_info       = ch_genotypes.map { map, file -> file}
 
     ch_coverage_quantification_hg              = COVERAGE_QUANTIFICATION_HG.out.summary.collect()
-    ch_coverage_quantification_virus           = COVERAGE_QUANTIFICATION_VIRUS.out.summary.collect()
+    ch_coverage_quantification_virus           = COVERAGE_QUANTIFICATION_VIRUS_DOMINANT.out.summary.collect()
 
     ch_read_families                  = CONSENSUSCRUNCHER.out.optional_read_families.collect()
     ch_read_families_virus            = QUANTIFICATION_DOMINANT.out.read_families.collect()

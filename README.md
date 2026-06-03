@@ -92,17 +92,17 @@ Flow
 ├── Alignment to human genome                                        [ storage+1 ]
 │   ├── [ Report: QC coverage ]                                                    ✅
 │   ├── [ Report: on-target rate ]                                                 ✅
-│   ├── Dedup                                                     [ storage+0.4? ]
+│   ├── Dedup                                                      [ storage+0.5 ]
 │   │   └── SMaSh
 │   │       └── [ Report: Sample swap ]                                            ✅ 
-│   └── GATK BQSR                                                  [ storage+1.? ] 
-│       └── ConsensusCruncher                                     [ storage+0.4? ] 
+│   └── GATK BQSR                                                    [ storage+1 ] 
+│       └── ConsensusCruncher                                        [ storage+1 ] 
 │           ├── dcs_sc: dcs.sc
 │           │   └── [ Report: Variant calls ]                                      ❓
 │           ├── dcs_sc: all.unique.dcs
 │           │   └── [ Report: Variants VAF ]                                       ❓
 │           ├── [ Report: Saturation rate ]                                        ✅
-│           └── [ Report: QC depth ]                              [ storage+0.4? ] ✅
+│           └── [ Report: QC depth ]                               [ storage+0.5 ] ✅
 ├── Genotyping by aligning hg-unmapped reads to 38 HPV genomes
 │   └── ConsensusCruncher 
 │       └── dcs_sc: all.unique.dcs
@@ -127,26 +127,28 @@ Flow
 │           ├── [ Report: Saturation rate ]                                        ✅
 │           └── [ Report: Quantification coverage (-f 2) ]                         ✅
 │
-├── HPV integration by SearcHPV (UMI-trimmed reads)
+├── HPV integration by SearcHPV (UMI-trimmed reads)                  [ storage+1 ]
 │   ├── if genotype corrected based on baseline
 │   │   └── [ Report: Breakpoints on corrected genotype ]                          ✅
 │   └── if no genotype correction
 │       └── [ Report: Breakpoints on dominant genotype ]                           ✅
-├── Insert size by picard (properly-pairead reads; circle not corrected)
+├── Insert size (properly-pairead reads; circle not corrected)       [ storage+1 ]
 │   ├── if genotype corrected based on baseline
 │   │   └── [ Report: Insert size metrics on corrected genotype (-f 2) ]           ✅ 
 │   └── if no genotype correction
 │       └── [ Report: Insert size metrics on dominant genotype (-f 2) ]            ✅
 └── Genome-level distribution of depth of coverage for virus
-    └── [ Report: depth of coverage/bp ] ❓ 
+    └── [ Report: depth of coverage/bp ]                                           ❓
+ 
+*storage is roughly estimated on fastq files which accomodate temporary bam files 
 
 Output
 .
 ├── multiqc
 │   └── multiqc_data
-├── tag_to_header
-├── bwa
-├── consensus
+├── tag_to_header                                                    [ storage+1 ]
+├── bwa                                                              [ storage+1 ]
+├── consensus                                                        [ storage+1 ]
 │   ├── hg19 
 │   ├── HPV_38genomes
 │   ├── corrected
@@ -156,7 +158,7 @@ Output
 │   ├── genotyping
 │   ├── hsmetrics
 │   ├── insertsize
-│   ├── integration
+│   ├── integration                                                  [ storage+1 ]
 │   └── smash
 ├── summary
 └── logs 

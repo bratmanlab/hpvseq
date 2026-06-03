@@ -374,6 +374,9 @@
         },
         "checkmate_best_guesses": {
             "type": "string"
+        },
+        "max_read_length": {
+            "type": "integer"
         }
     }
 }
