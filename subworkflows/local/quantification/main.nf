@@ -9,27 +9,15 @@ include { BAM_SORT_STATS_SAMTOOLS     } from '../../nf-core/bam_sort_stats_samto
 
 workflow QUANTIFICATION {
     take:
-    input           // channel: [ val(meta), path(bam), path(genotype) ]
+    input           // channel: [ val(meta), path(bam) ]
 
     main:
-    bam      = input.map { meta, bam, genotype -> tuple( meta, bam ) } 
-    genotype = input.map { meta, bam, genotype -> tuple( meta, genotype ) } 
-    //bam.view { meta, bam -> "UNMAPPED BAM PATH : ${bam}" }
 
     //
     // Prepare virus genomes
     //
-/* 
-    ch_virus = input
-    .map { meta, bam, genotype_file ->
-	// 1. Extract the virus name safely from the first line of the file
-	// readLines() is okay for tiny files (1-2 lines), but use with caution
-	def lines = genotype_file.readLines()
-	def virus_name = lines ? lines[0].trim() : null
-	tuple( meta, virus_name ) 
-    }
-*/
-    ch_virus = input
+/*
+    ch_bam = input
     .map { meta, bam, genotype ->
         def virus_name = ""
         // Check if genotype is a Path/File or just a String
@@ -41,66 +29,31 @@ workflow QUANTIFICATION {
             // It's already a string, use it directly
             virus_name = genotype.toString().trim()
         }
-        tuple( meta, virus_name ) 
+        tuple( meta + [ virus: virus_name ], bam ) 
     }
-
-    ch_sort_fasta_fai = ch_virus
-    .filter { meta, virus_name -> virus_name != null } // Skip if no virus name found
-    .map { meta, virus_name ->
-	// 2. Construct paths using the extracted name
-	def fasta = file("${params.ref_path_virus}/${virus_name}/${virus_name}.fasta")
-	def fai   = file("${params.ref_path_virus}/${virus_name}/${virus_name}.fasta.fai")
-	tuple( meta + [ virus: virus_name ], fasta, fai ) 
-    }
-
-    ch_dict = ch_virus
-    .filter { meta, virus_name -> virus_name != null } // Skip if no virus name found
-    .map { meta, virus_name ->
+    ch_dict = input
+    .map { meta, bam ->
+        def virus_name = meta.virus
 	def dict   = file("${params.ref_path_virus}/${virus_name}/${virus_name}.dict")
 	tuple( meta, dict ) 
     }
-    
-    ch_cytoband = ch_virus
-    .filter { meta, virus_name -> virus_name != null } // Skip if no virus name found
-    .map { meta, virus_name ->
+*/ 
+    ch_cytoband = input 
+    .map { meta, bam ->
+        def virus_name = meta.virus
 	def cytoband = file("${params.ref_path_virus}/${virus_name}/${virus_name}.cytoband")
-	tuple( [id: virus_name], cytoband ) 
+	tuple( meta, cytoband) 
     }
 
-    // "" represents whole genome 
-    ch_bed = ch_virus
-    .map { meta, virus_name ->
-	def bedfile   = file("${params.ref_path_virus}/${virus_name}/${virus_name}_E6E7.bed")
-        tuple( meta, bedfile.exists() ? bedfile : [] ) 
-    }
-/*
-    ch_cytoband.view { meta, cytoband -> 
-        """
-        SAMPLE        : ${meta.id}
-        CYTOBAND PATH : ${cytoband}
-        """
-    }
-*/
-    ch_index = ch_virus
-    .filter { meta, virus_name -> virus_name != null } // Skip if no virus name found
-    .map { meta, virus_name ->
-	def index = file("${params.ref_path_virus}/${virus_name}/")
-	tuple( [id: virus_name], index )
-    }
-/*
-    ch_index.view { meta, index -> 
-        """
-        SAMPLE        : ${meta.id}
-        INDEX PATH    : ${index}
-        """
-    }
-*/
     //
     // Bam to fastq 
     //
+    ch_collatefastq = input.map { meta, bam -> tuple( meta, bam, [], [] )}
     SAMTOOLS_COLLATEFASTQ (
-        bam,
-        [ [:], [], [] ],
+        ch_collatefastq,
+        //input,
+        //tuple( [:], null, null ),
+        //[ [:], [], [] ],
         false
     )
 
@@ -108,65 +61,58 @@ workflow QUANTIFICATION {
     // Align to the given genome 
     //
     ch_fastq = SAMTOOLS_COLLATEFASTQ.out.fastq
-/*
-    ch_fastq.view { meta, reads -> 
-        """
-        SAMPLE              : ${meta.id}
-        UNMAPPED2FASTQ PATH : ${reads}
-        """
+    .map { meta, reads ->
+        def virus_name = meta.virus
+	def index = file("${params.ref_path_virus}/${virus_name}/")
+	tuple( meta, reads, index, [], [] )
     }
-*/
     BWA_MEM (
         ch_fastq,
-        ch_index,
-        [ [:], [] ],    // No fasta needed for BAM output
+//        ch_index,
+//        [ [:], [] ],    // No fasta needed for BAM output
         false           // sort_bam - we'll sort with samtools for consistency
     )
     ch_orig_bam = BWA_MEM.out.bam
-    ch_orig_bam = ch_orig_bam
-        .join(ch_virus)
-        .map { meta, bam, virus_name ->
-            tuple( meta + [ref2: virus_name, type2: "Aligned", consensus: "none"], bam ) 
-        }
-/*
-    ch_orig_bam = ch_orig_bam
-        .combine(ch_index)
-        .map { meta, bam, meta_genome, index ->
-            tuple( meta + [ref2: meta_genome.id, type2: "Aligned", consensus: "none"], bam ) 
-        }
-
-    ch_orig_bam.view { meta, bam -> 
-        """
-        SAMPLE            : ${meta.id}
-        BAM PATH RE-ALIGN : ${bam}
-        """
+    .map { meta, bam ->
+        tuple( meta + [ref2: meta.virus, type2: "Aligned", consensus: "none"], bam ) 
     }
-*/
     //
     // Sort, index BAM file and run samtools stats, flagstat and idxstats
     //
+    ch_bam_sort_stats = ch_orig_bam
+    .map { meta, bam ->
+	// Construct paths using the extracted name
+        def virus_name = meta.virus
+	def fasta = file("${params.ref_path_virus}/${virus_name}/${virus_name}.fasta")
+	def fai   = file("${params.ref_path_virus}/${virus_name}/${virus_name}.fasta.fai")
+	tuple( meta, bam, fasta, fai ) 
+    }
     BAM_SORT_STATS_SAMTOOLS (
-        ch_orig_bam,
-        ch_sort_fasta_fai
+        ch_bam_sort_stats
+        //ch_orig_bam,
+        //ch_fasta_fai
     )
 
     //
     // ConsensusCruncher: genotype
     //
     ch_cc_genotype = BAM_SORT_STATS_SAMTOOLS.out.bam
-       .join(BAM_SORT_STATS_SAMTOOLS.out.index)
-
+    .join(BAM_SORT_STATS_SAMTOOLS.out.index)
+    .map { meta, bam, bai -> 
+        def virus_name = meta.virus
+	def cytoband = file("${params.ref_path_virus}/${virus_name}/${virus_name}.cytoband")
+	tuple( meta, bam, bai, cytoband) 
+    }
     CONSENSUSCRUNCHER (
-        ch_cc_genotype,
-        ch_cytoband
+        ch_cc_genotype
     )
-
+    
     emit:
-    bam                = BAM_SORT_STATS_SAMTOOLS.out.bam
-    bai                = BAM_SORT_STATS_SAMTOOLS.out.index
-    consensus_dir      = CONSENSUSCRUNCHER.out.consensus_dir
-    read_families      = CONSENSUSCRUNCHER.out.optional_read_families
-    bam_dcssc          = CONSENSUSCRUNCHER.out.bam_dcssc
+    bam                = BAM_SORT_STATS_SAMTOOLS.out.bam                // channel: [ meta, bam]
+    bai                = BAM_SORT_STATS_SAMTOOLS.out.index              // channel: [ meta, bai]
+    consensus_dir      = CONSENSUSCRUNCHER.out.consensus_dir            //     dir:
+    read_families      = CONSENSUSCRUNCHER.out.optional_read_families   // channel: [ meta,
+    bam_dcssc          = CONSENSUSCRUNCHER.out.bam_dcssc                // channel: [ meta,
     bai_dcssc          = CONSENSUSCRUNCHER.out.bai_dcssc
     bam_alluniquedcs   = CONSENSUSCRUNCHER.out.bam_alluniquedcs
     bai_alluniquedcs   = CONSENSUSCRUNCHER.out.bai_alluniquedcs
@@ -176,8 +122,8 @@ workflow QUANTIFICATION {
     bai_sscs           = CONSENSUSCRUNCHER.out.bai_sscs
     bam_sscssc         = CONSENSUSCRUNCHER.out.bam_sscssc
     bai_sscssc         = CONSENSUSCRUNCHER.out.bai_sscssc
-    fasta_fai_genotype = ch_sort_fasta_fai                 //channel
-    dict_genotype      = ch_dict                           //channel
-    bed_genotype       = ch_bed                            //channel
+//    fasta_fai_genotype = ch_fasta_fai                                   //channel: [ meta, fasta, fai ]
+//    dict_genotype      = ch_dict                                        //channel: [ meta, dict ]
+//    bed_genotype       = ch_bed                                         //channel: [ meta, bed ]
 }
 

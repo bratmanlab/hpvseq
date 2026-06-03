@@ -26,7 +26,7 @@ workflow INSERTSIZE {
 //    ch_insertsize = ch_properlypaired.join(SAMTOOLS_INDEX.out.index)
 
     PICARD_COLLECTINSERTSIZEMETRICS (
-        ch_properlypaired,
+        ch_properlypaired
     )
 
     emit:

@@ -8,18 +8,22 @@ include { BAM_STATS_SAMTOOLS } from '../bam_stats_samtools'
 
 workflow BAM_SORT_STATS_SAMTOOLS {
     take:
-    ch_bam // channel: [ val(meta), [ bam ] ]
-    ch_fasta_fai // channel: [ val(meta), path(fasta), path(fai) ]
+    input // channel: [ val(meta), [ bam ], path(fasta), path(fai) ]
+    //ch_bam // channel: [ val(meta), [ bam ], path(fasta), path(fai) ]
+    //ch_fasta_fai // channel: [ val(meta), path(fasta), path(fai) ]
 
     main:
-    SAMTOOLS_SORT(ch_bam, ch_fasta_fai, '')
+    
+    //SAMTOOLS_SORT(ch_bam, ch_fasta_fai, '')
+    SAMTOOLS_SORT(input, '')
 
     SAMTOOLS_INDEX(SAMTOOLS_SORT.out.bam)
 
     SAMTOOLS_SORT.out.bam
         .join(SAMTOOLS_INDEX.out.index, by: [0])
         .set { ch_bam_bai }
-    
+
+    ch_fasta_fai = input.map { meta, bam, fasta, fai -> tuple( meta, fasta, fai ) }    
     BAM_STATS_SAMTOOLS(ch_bam_bai, ch_fasta_fai)
 
     emit:

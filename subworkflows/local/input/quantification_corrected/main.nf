@@ -26,7 +26,7 @@ workflow INPUT_QUANTIFICATION_CORRECTED {
     .splitText()                 // Break file into individual lines
     .map { line -> 
         def parts = line.trim().split()
-        tuple( parts[0], parts[1] ) // This creates the [id, geno] tuple
+        tuple( parts[0], parts[1] ) // This creates the [id, genotype] tuple
     }
     .view { sample, genotype -> "CORRECTED GENOTYPE : $sample -> $genotype" }
 
@@ -35,7 +35,7 @@ workflow INPUT_QUANTIFICATION_CORRECTED {
     }
     ch_joined                         = ch_unmapped.join(ch_corrected_genotypes)
     ch_quantification_corrected_input = ch_joined.map { sample, meta, bam, genotype ->
-        tuple( meta, bam, genotype )
+        tuple( meta + [ virus: genotype ], bam)
     }
 
     emit:
