@@ -1,5 +1,5 @@
 process COUNT_READS {
-    tag "$meta.id"
+    tag "${meta.id}_COUNTREADS"
     label 'process_single'
 
     input:

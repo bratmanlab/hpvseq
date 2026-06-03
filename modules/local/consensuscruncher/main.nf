@@ -1,10 +1,40 @@
 process CONSENSUSCRUNCHER {
-    tag "${meta.id}_${meta.ref}${meta.type}_${meta.ref2}${meta.type2}_${meta.consensus}"
+    tag "${meta.id}_CONSENSUSCRUNCHER"
     label 'process_higher'
 
+    maxRetries    = 3
+    errorStrategy {
+        // Retry scheduler/resource failures
+        if( task.exitStatus in [137, 140, 143, 247] )
+            return 'retry'
+
+        // Retry OOM / walltime messages
+        if( task.stderr?.contains('OutOfMemory') ||
+            task.stderr?.contains('oom') ||
+            task.stderr?.contains('walltime') )
+            return 'retry'
+
+        // Otherwise ignore and emit partial outputs
+        return 'ignore'
+    }
+
     input:
-    tuple val(meta), path(bam), path(bai)
-    tuple val(meta2), path(cytoband)
+    tuple val(meta), path(bam), path(bai), path(cytoband)
+    //tuple val(meta), path(cytoband)
+
+    publishDir(
+        {
+            def genome_dirs = [
+                hg          : params.genome,
+                genotyping  : params.genome_genotyping, 
+                dominant    : "${meta.cc_type}/${meta.ref2}",
+                corrected   : "${meta.cc_type}/${meta.ref2}",
+            ]
+            def target = genome_dirs[meta.cc_type] ?: meta.cc_type
+            "${params.outdir}/consensus/${target}"
+        },
+        mode: 'copy'
+    )
 
     output:
     tuple val(meta), path("${bam.baseName}"), emit: consensus_dir
@@ -37,7 +67,10 @@ process CONSENSUSCRUNCHER {
     echo "bam = ${bam}" >> $config
     echo "c_output = ." >> $config
     echo "bedfile = ${cytoband}" >> $config
+
+    set +e
     python3 ${params.consensuscruncher_dir}/ConsensusCruncher.py -c $config consensus
+    exit 0
     """
 
     stub:

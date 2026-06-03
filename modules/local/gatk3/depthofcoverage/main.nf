@@ -1,15 +1,15 @@
 process GATK3_DEPTHOFCOVERAGE {
-    tag "${meta.id}_${meta.ref}${meta.type}_${meta.ref2}${meta.type2}_${meta.consensus}"
-    label 'process_medium'
+    tag "${meta.id}_DEPTHOFCOVERAGE"
+    label 'process_higher'
 
     // not confirmed
     container 'broadinstitute/gatk3:3.8-1'
 
     input:
-    tuple val(meta), path(bam), path(bai)
-    tuple val(meta2), path(fasta), path(fai)
-    tuple val(meta2), path(dict)
-    tuple val(meta3), path(bed)
+    tuple val(meta), path(bam), path(bai), path(fasta), path(fai), path(dict), path(bed)
+//    tuple val(meta2), path(fasta), path(fai)
+//    tuple val(meta2), path(dict)
+//    tuple val(meta3), path(bed)
 
     output:
     path "*.sample_summary", emit: summary
@@ -20,7 +20,7 @@ process GATK3_DEPTHOFCOVERAGE {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def intervals = bed ? "-L ${bed}" : ""
+    def intervals = ( bed && bed.size() > 0) ? "-L ${bed}" : ""
     """
     java -jar \$gatk_dir/GenomeAnalysisTK.jar \\
         -T DepthOfCoverage \\

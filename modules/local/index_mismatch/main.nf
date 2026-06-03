@@ -1,5 +1,5 @@
 process INDEX_MISMATCH {
-    tag "$meta.id"
+    tag "${meta.id}_INDEXMISMATCH"
     label 'process_single'
 
     input:
