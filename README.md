@@ -79,64 +79,64 @@ For more details about the output files and reports, please refer to the
 ```text
 Flow
 .   
-├── fastq or SRA? ✅  
+├── fastq or SRA?                                              [ SRA: storage+1 ]  ✅  
 ├── Pre-QC 
-│   └── Sample index error rate matched? ✅ 
+│   └── Sample index error rate matched?                                           ✅ 
 ├── QC
 │   ├── FastqQC 
 │   └── MultiQC
-│       └── [ Report: QC Sequencing ] ✅
+│       └── [ Report: QC Sequencing ]                                              ✅
 ├── Post-QC 
-│   ├── Trim read length? [ included but not tested yet ] ✅ 
-│   └── Merge fastq files? ✅ 
-├── Alignment to human genome
-│   ├── [ Report: QC coverage ] ✅
-│   ├── [ Report: on-target rate ] ✅
-│   ├── Dedup
+│   ├── Trim read length? [ not tested yet ]                         [ storage+1 ] ✅ 
+│   └── Merge fastq files?                                           [ storage+1 ] ✅ 
+├── Alignment to human genome                                        [ storage+1 ]
+│   ├── [ Report: QC coverage ]                                                    ✅
+│   ├── [ Report: on-target rate ]                                                 ✅
+│   ├── Dedup                                                     [ storage+0.4? ]
 │   │   └── SMaSh
-│   │       └── [ Report: Sample swap ]  ✅ 
-│   └── GATK BQSR  
-│       └── ConsensusCruncher 
+│   │       └── [ Report: Sample swap ]                                            ✅ 
+│   └── GATK BQSR                                                  [ storage+1.? ] 
+│       └── ConsensusCruncher                                     [ storage+0.4? ] 
 │           ├── dcs_sc: dcs.sc
-│           │   └── [ Report: Variant calls ] ❓
+│           │   └── [ Report: Variant calls ]                                      ❓
 │           ├── dcs_sc: all.unique.dcs
-│           │   └── [ Report: Variants VAF ] ❓
-│           ├── [ Report: Saturation rate ]  ✅
-│           └── [ Report: QC depth ] ✅
+│           │   └── [ Report: Variants VAF ]                                       ❓
+│           ├── [ Report: Saturation rate ]                                        ✅
+│           └── [ Report: QC depth ]                              [ storage+0.4? ] ✅
 ├── Genotyping by aligning hg-unmapped reads to 38 HPV genomes
 │   └── ConsensusCruncher 
 │       └── dcs_sc: all.unique.dcs
-│           └── [ Report: detected genotypes (-f 2 -q 30) ] ✅
+│           └── [ Report: detected genotypes (-f 2 -q 30) ]                        ✅
 ├── Quantification preparation on dominant genotype
 │   └── Alignment of hg-unmapped reads to the given genotype 
 │       └── ConsensusCruncher 
 │           ├── dcs_sc: dcs.sc
-│           │   └── [ Report: Variant calls ] ❓
+│           │   └── [ Report: Variant calls ]                                      ❓
 │           ├── dcs_sc: all.unique.dcs
-│           │   └── [ Report: Variants VAF ] ❓
-│           ├── [ Report: Saturation rate ] ✅
-│           └── [ Report: Qantification coverage (-f 2) ] ✅ 
+│           │   └── [ Report: Variants VAF ]                                       ❓
+│           ├── [ Report: Saturation rate ]                                        ✅
+│           └── [ Report: Qantification coverage (-f 2) ]                          ✅ 
 │ 
 ├── Quantitfication preparation on baseline-corrected genotype
 │   └──Alignment of hg-unmapped reads to the given genotype
 │      └── ConsensusCruncher
 │           ├── dcs_sc: dcs.sc
-│           │   └── [ Report: Variant calls ] ❓
+│           │   └── [ Report: Variant calls ]                                      ❓
 │           ├── dcs_sc: all.unique.dcs
-│           │   └── [ Report: Variants VAF ] ❓
-│           ├── [ Report: Saturation rate ] ✅
-│           └── [ Report: Quantification coverage (-f 2) ] ✅
+│           │   └── [ Report: Variants VAF ]                                       ❓
+│           ├── [ Report: Saturation rate ]                                        ✅
+│           └── [ Report: Quantification coverage (-f 2) ]                         ✅
 │
 ├── HPV integration by SearcHPV (UMI-trimmed reads)
 │   ├── if genotype corrected based on baseline
-│   │   └── [ Report: Breakpoints on corrected genotype ] ✅
+│   │   └── [ Report: Breakpoints on corrected genotype ]                          ✅
 │   └── if no genotype correction
-│       └── [ Report: Breakpoints on dominant genotype ] ✅
+│       └── [ Report: Breakpoints on dominant genotype ]                           ✅
 ├── Insert size by picard (properly-pairead reads; circle not corrected)
 │   ├── if genotype corrected based on baseline
-│   │   └── [ Report: Insert size metrics on corrected genotype (-f 2) ] ✅ 
+│   │   └── [ Report: Insert size metrics on corrected genotype (-f 2) ]           ✅ 
 │   └── if no genotype correction
-│       └── [ Report: Insert size metrics on dominant genotype (-f 2) ] ✅
+│       └── [ Report: Insert size metrics on dominant genotype (-f 2) ]            ✅
 └── Genome-level distribution of depth of coverage for virus
     └── [ Report: depth of coverage/bp ] ❓ 
 
