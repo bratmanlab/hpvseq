@@ -8,8 +8,9 @@ process SAMTOOLS_COLLATEFASTQ {
         : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}"
 
     input:
-    tuple val(meta), path(input)
-    tuple val(meta2), path(fasta), path(fai)
+    tuple val(meta), path(input), path(fasta), path(fai)
+    //tuple val(meta), path(input)
+    //tuple val(meta2), path(fasta), path(fai)
     val interleave
 
     output:

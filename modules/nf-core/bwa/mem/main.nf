@@ -8,9 +8,9 @@ process BWA_MEM {
         'community.wave.seqera.io/library/bwa_htslib_samtools:83b50ff84ead50d0' }"
 
     input:
-    tuple val(meta) , path(reads)
-    tuple val(meta2), path(index)
-    tuple val(meta3), path(fasta)
+    tuple val(meta) , path(reads), path(index), path(fasta), path(fai)
+    //tuple val(meta2), path(index)
+    //tuple val(meta3), path(fasta)
     val   sort_bam
 
     output:

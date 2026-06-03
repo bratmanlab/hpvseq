@@ -8,8 +8,8 @@ process SAMTOOLS_SORT {
         : 'community.wave.seqera.io/library/htslib_samtools:1.23.1--5b6bb4ede7e612e5'}"
 
     input:
-    tuple val(meta), path(bam)
-    tuple val(meta2), path(fasta), path(fai)
+    tuple val(meta), path(bam), path(fasta), path(fai)
+    //tuple val(meta2), path(fasta), path(fai)
     val index_format
 
     output:
