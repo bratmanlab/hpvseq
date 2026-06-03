@@ -1,5 +1,5 @@
 process TAGTOHEADER {
-    tag "$meta.id"
+    tag "${meta.id}_TAGTOHEADER"
     label 'process_medium'
 
     input:

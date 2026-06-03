@@ -1,5 +1,5 @@
 process REFORMAT_FASTQ2 {
-    tag "$meta.id"
+    tag "${meta.id}_REFORMATFASTQ2"
     label 'process_single'
 
     input:

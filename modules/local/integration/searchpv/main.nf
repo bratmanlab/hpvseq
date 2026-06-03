@@ -1,15 +1,15 @@
 process INTEGRATION_SEARCHPV {
-    tag "$meta.id"
+    tag "${meta.id}_SEARCHPV"
     label 'process_higher'
 
     input:
-    tuple val(meta), path(reads)
+    tuple val(meta), path(reads), path(index_virus)
     tuple val(meta2), path(index_hg)
-    tuple val(meta3), path(index_virus)
+    //tuple val(meta3), path(index_virus)
 
     output:
-    tuple val(meta), path("${meta.id}__${meta3.virus}"), emit: searchpv_dir
-    path("${meta.id}__${meta3.virus}/call_fusion_virus/${meta.id}_HPVfusionPointContig.txt"), optional: true, emit: HPVfusionPointContigSrNum
+    tuple val(meta), path("${meta.id}__${meta.virus}"), emit: searchpv_dir
+    path("${meta.id}__${meta.virus}/call_fusion_virus/${meta.id}_HPVfusionPointContig.txt"), optional: true, emit: HPVfusionPointContigSrNum
 
     when:
     task.ext.when == null || task.ext.when
@@ -19,7 +19,7 @@ process INTEGRATION_SEARCHPV {
     """
     INDEX=`find -L ./ -name "*.amb" | sed 's/\\.amb\$//'`
     echo \$INDEX
-    fasta_virus="${meta3.virus}.fasta"
+    fasta_virus="${meta.virus}.fasta"
     for index in \${INDEX[@]};do
         if [[ "\$index" == *"\$fasta_virus" ]]; then
             ref_virus=\$index
@@ -35,11 +35,11 @@ process INTEGRATION_SEARCHPV {
         -fastq2 ${reads[1]} \
 	-humRef \${ref_hg} \
 	-virRef \${ref_virus} \
-	-output ${meta.id}__${meta3.virus} \
+	-output ${meta.id}__${meta.virus} \
         ${args}
 
     ## Collect srNum
-    txt="${meta.id}__${meta3.virus}/call_fusion_virus/HPVfusionPointContig.txt"
+    txt="${meta.id}__${meta.virus}/call_fusion_virus/HPVfusionPointContig.txt"
     n=\$(wc -l \$txt | awk '{print \$1}')
     if [[ "\$n" -gt "1" ]];then
         Dir=\$(dirname \$txt);
@@ -50,15 +50,15 @@ process INTEGRATION_SEARCHPV {
             sr=\$(awk -v contig=\$contig '{if(\$1==contig) print \$2}' \$Dir/\$site/srNum.txt);
             echo \$sr
             done >> tmp2_${meta.id}
-        paste tmp1_${meta.id} tmp2_${meta.id} > "${meta.id}__${meta3.virus}/call_fusion_virus/${meta.id}_HPVfusionPointContig.txt"
+        paste tmp1_${meta.id} tmp2_${meta.id} > "${meta.id}__${meta.virus}/call_fusion_virus/${meta.id}_HPVfusionPointContig.txt"
         #rm tmp*_${meta.id}
     fi
     """
 
     stub:
     """
-    mkdir -p ${meta.id}__${meta3.virus}/call_fusion_virus
-    touch ${meta.id}__${meta3.virus}/call_fusion_virus/HPVfusionPointContig.txt
+    mkdir -p ${meta.id}__${meta.virus}/call_fusion_virus
+    touch ${meta.id}__${meta.virus}/call_fusion_virus/HPVfusionPointContig.txt
     """
 }
 

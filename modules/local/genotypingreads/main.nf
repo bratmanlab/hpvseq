@@ -1,5 +1,5 @@
 process GENOTYPING_READS {
-    tag "${meta.id}_genotyping"
+    tag "${meta.id}_GENOTYPING"
     label 'process_single'
 
     input:
