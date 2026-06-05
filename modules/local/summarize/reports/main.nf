@@ -140,7 +140,7 @@ process SUMMARIZE_REPORTS {
     awk -v label="families_gt2" 'NR==1{print label"_"\$2, label"_"\$3}NR>1{print \$0}' tmp_saturation_nonsingles_table_2 >| tmp_saturation_nonsingles_table_3
     awk -v label="PCT_families_gt2" 'NR==1{print label"_"\$2, label"_"\$3}NR>1{print \$0}' tmp_saturation_rate_table_2 >| tmp_saturation_rate_table_3   
 
-    paste tmp_saturation_total_table_2 tmp_saturation_nonsingles_table_3 tmp_saturation_rate_table_3 > ${summ_saturation_table_file}
+    paste -d " " tmp_saturation_total_table_2 tmp_saturation_nonsingles_table_3 tmp_saturation_rate_table_3 > ${summ_saturation_table_file}
     #rm tmp_saturation_* 
     """
 
