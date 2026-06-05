@@ -570,11 +570,20 @@ workflow HPVSEQ {
             println list
             list.collect { pair -> "${pair[0]}:${pair[1]}" }.join(" ")
         }
+        ch_others_info = ch_genotype_correction.others
+        .map { meta, bam_unmapped ->
+            tuple( meta.id, meta.virus ) 
+        }
+        .toList()
+        .map { list ->
+            println list
+            list.collect { pair -> "${pair[0]}:${pair[1]}" }.join(" ")
+        }
         INPUT_QUANTIFICATION_CORRECTED (
             ch_quantification_corrected_unmapped,
             ch_baseline_info,
-            //CHECKMATE.out.best_guesses
-            ch_checkmate_best_guesses
+            ch_checkmate_best_guesses,
+            ch_others_info
         )
         ch_quantification_corrected = INPUT_QUANTIFICATION_CORRECTED.out.quantification_corrected_input
         .map { meta, bam -> tuple( meta + [ cc_type: "corrected" ], bam ) }
