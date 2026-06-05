@@ -4,6 +4,7 @@ process CORRECT_GENOTYPE {
     input:
     val(baseline_info)
     path(mates)
+    val(others_info)
 
     output:
     path("corrected_genotypes.txt"), emit: corrected_genotype
@@ -32,6 +33,11 @@ process CORRECT_GENOTYPE {
         genotype=\$(echo \$line | cut -d ":" -f2)
         awk -v samp=\$samp '{if(\$1==samp".bam") print \$0}' mates.txt | awk -v genotype=\$genotype '{gsub(/.bam\$/, ""); gsub(/.bam /, " "); for(i=1;i<=NF;i++){print \$i, genotype }}' 
         done > corrected_genotypes.txt 
+    for line in ${others_info};do 
+        samp=\$(echo \$line | cut -d ":" -f1)
+        genotype=\$(echo \$line | cut -d ":" -f2)
+        echo $samp $genotype
+        done >> corrected_genotypes.txt 
     """
 
     stub:
