@@ -89,7 +89,7 @@ workflow GENOTYPING {
             [ meta + [ ref2: params.genome_genotyping, type2: "Aligned", consensus: "none"], bam ]
         }
 
-    ch_orig_bam.view { it -> println("Genotyping BWA_MEM"); println(it); println(it*.getClass()) }
+    //ch_orig_bam.view { it -> println("Genotyping BWA_MEM"); println(it); println(it*.getClass()) }
     //
     // Sort, index BAM file and run samtools stats, flagstat and idxstats
     //
@@ -103,7 +103,7 @@ workflow GENOTYPING {
     //    ch_orig_bam,
     //    ch_fasta_fai
     )
-    BAM_SORT_STATS_SAMTOOLS.out.bam.view { it -> println("Genotyping BAM_SORT_STATS_SAMTOOLS"); println(it); println(it*.getClass()) }
+    //BAM_SORT_STATS_SAMTOOLS.out.bam.view { it -> println("Genotyping BAM_SORT_STATS_SAMTOOLS"); println(it); println(it*.getClass()) }
     
     //
     // ConsensusCruncher: genotyping
@@ -112,14 +112,14 @@ workflow GENOTYPING {
     .map { meta, bam, bai, index, fasta, fai, cytoband -> 
         tuple( meta + [ type: "Unmapped", ref2: params.genome_genotyping, type2: "Aligned", consensus: "none"], cytoband ) 
     }
-    ch_cytoband.view { it -> println("Genotyping cytoband"); println(it); println(it*.getClass()) }
+    //ch_cytoband.view { it -> println("Genotyping cytoband"); println(it); println(it*.getClass()) }
     ch_cc_genotyping = BAM_SORT_STATS_SAMTOOLS.out.bam
     .join(BAM_SORT_STATS_SAMTOOLS.out.index)
     .join(ch_cytoband)
     .map { meta, bam, bai, cytoband ->
         tuple( meta + [ cc_type: "genotyping" ], bam, bai, cytoband ) 
     }
-    ch_cc_genotyping.view { it -> println("Genotyping ConsensusCruncher"); println(it); println(it*.getClass()) }
+    //ch_cc_genotyping.view { it -> println("Genotyping ConsensusCruncher"); println(it); println(it*.getClass()) }
     CONSENSUSCRUNCHER (
         ch_cc_genotyping
         //cytoband
