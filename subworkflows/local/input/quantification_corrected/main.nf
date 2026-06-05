@@ -7,8 +7,9 @@ include { CORRECT_GENOTYPE         } from '../../../../modules/local/correct_gen
 workflow INPUT_QUANTIFICATION_CORRECTED {
     take:
     bam_unmapped               //      channel: [ val(meta), path(bam) ]
-    baseline_ids_genotypes     //          val: "id:genotype id:genotype"
+    baseline_ids_genotypes     //          val: "id:genotype id:genotype" for baseline
     mates                      //      channel: path(best_guesses)
+    others_ids_genotypes       //          val: "id:genotype id:genotype" for non-baseline
 
     main:
 
@@ -17,7 +18,8 @@ workflow INPUT_QUANTIFICATION_CORRECTED {
     //
     CORRECT_GENOTYPE (
         baseline_ids_genotypes,
-        mates
+        mates,
+        others_ids_genotypes
     )
     ch_genotypes = CORRECT_GENOTYPE.out.corrected_genotype
 
