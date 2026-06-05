@@ -1,5 +1,5 @@
 process META_TIMEPOINT {
-    tag "$meta.id"
+    tag "${meta.id}_METATIMEPOINT"
     label 'process_single'
 
     input:
@@ -12,7 +12,11 @@ process META_TIMEPOINT {
     script:
     def pool = ""
     if (params.key_pool) { 
-        pool = meta.id.tokenize(params.pool_delim).find { it.toLowerCase().startsWith('pool') } 
+        pool = meta.id.tokenize(params.pool_delim).find { it.toLowerCase().startsWith('pool') }
+        if (pool.toLowerCase() == "pool") {
+            def ext = meta.id.split("${pool}${params.pool_delim}")[1].split(params.pool_delim)[0]
+            pool = "${pool}_${ext}"
+        }
     }
  
     """
