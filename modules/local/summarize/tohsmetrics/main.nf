@@ -58,6 +58,8 @@ process SUMMARIZE_TOHSMETRICS {
         done >> ${summ_nreads_file} 
          
     pivot ${summ_nreads_file} ${summ_nreads_table_file}
+    awk 'NR==1{print \$0, "perc"}NR>1{print \$0, \$2/\$3}' ${summ_nreads_table_file} > tmp_${summ_nreads_table_file}
+    mv tmp_${summ_nreads_table_file} ${summ_nreads_table_file}
 
     ## on-target rate
     head ${hsmetrics_file1} -n 7 | tail -n 1 | awk -F'\t' '{print "samp",\$2,\$21,\$3,\$23,\$31,\$32,\$28,\$29,\$4,\$5,\$6,\$30,\$8,\$10,\$34,\$11,\$12}' > ${summ_hsmetrics_file}
