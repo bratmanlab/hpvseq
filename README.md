@@ -198,5 +198,6 @@ You can cite the `bratmanlab` publication as follows:
 > **The bratmanlab framework for community-curated bioinformatics pipelines.**
 >
 > Leung E, Han K, Zou J, Zhao Z, Zheng Y, Wang TT, Rostami A, Siu LL, Pugh TJ, Bratman SV. HPV Sequencing Facilitates Ultrasensitive Detection of HPV Circulating Tumor DNA. Clin Cancer Res. 2021 Nov 1;27(21):5857-5868. doi: 10.1158/1078-0432.CCR-19-2384. Epub 2021 Sep 27. PMID: 34580115; PMCID: PMC9401563.
+>
 > Han K, Zou J, Zhao Z, Baskurt Z, Zheng Y, Barnes E, Croke J, Ferguson SE, Fyles A, Gien L, Gladwish A, Lecavalier-Barsoum M, Lheureux S, Lukovic J, Mackay H, Marchand EL, Metser U, Milosevic M, Taggar AS, Bratman SV, Leung E. Clinical Validation of Human Papilloma Virus Circulating Tumor DNA for Early Detection of Residual Disease After Chemoradiation in Cervical Cancer. J Clin Oncol. 2024 Feb 1;42(4):431-440. doi: 10.1200/JCO.23.00954. Epub 2023 Nov 16. PMID: 37972346; PMCID: PMC10824379.
 >
