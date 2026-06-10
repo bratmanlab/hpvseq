@@ -51,8 +51,8 @@ To see the results of an example test run with a full size dataset refer to the 
 For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/hpvseq/output).
 
+> **Flow**
 ```text
-**Flow**
 .   
 ├── fastq or SRA?                                               [ SRA: storage+1 ] ✅  
 ├── Pre-QC 
@@ -118,8 +118,10 @@ For more details about the output files and reports, please refer to the
  
 -?- represents that the process is skippable
 * storage is roughly estimated on fastq files which accomodate temporary bam files 
+```
 
-**Output**
+> **Output**
+```text
 .
 ├── multiqc
 │   └── multiqc_data
@@ -140,8 +142,10 @@ For more details about the output files and reports, please refer to the
 ├── summary
 └── logs 
 
+```
 
-**Check completeness and failures on output files and logs**
+> **Check completeness and failures on output files and logs**
+```text
 .
 ├── Alignment (as basis)
 │   └── bwa 
