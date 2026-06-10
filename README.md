@@ -5,7 +5,7 @@
   </picture>
 </h1>
 
-**bratmanlab/hpvseq** is a bioinformatics nextflow pipeline including HPV DNA detection, HPV genotyping and quantification, integration detection, fragment insert size estimation and variant calling on **dual-UMIs** and **paired-end barcoding sequencing** data by demultiplexing method of ConsensusCruncher (https://github.com/pughlab/ConsensusCruncher). It is tested on HPC, and will be on cloud in future. 
+**bratmanlab/hpvseq** is a bioinformatics nextflow pipeline including HPV DNA detection, HPV genotyping and quantification, and optional analyses including integration detection, fragment insert size estimation and variant calling on **dual-UMIs** and **paired-end barcoding sequencing** data by demultiplexing method of ConsensusCruncher (https://github.com/pughlab/ConsensusCruncher). It is tested on HPC, and will be on cloud in future. 
 
 <!-- TODO bratmanlab:
    Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
@@ -52,7 +52,7 @@ For more details about the output files and reports, please refer to the
 [output documentation](https://nf-co.re/hpvseq/output).
 
 ```text
-Flow
+**Flow**
 .   
 ├── fastq or SRA?                                               [ SRA: storage+1 ] ✅  
 ├── Pre-QC 
@@ -119,7 +119,7 @@ Flow
 -?- represents that the process is skippable
 * storage is roughly estimated on fastq files which accomodate temporary bam files 
 
-Output
+**Output**
 .
 ├── multiqc
 │   └── multiqc_data
@@ -141,7 +141,7 @@ Output
 └── logs 
 
 
-Check completeness and failures on output files and logs
+**Check completeness and failures on output files and logs**
 .
 ├── Alignment (as basis)
 │   └── bwa 
