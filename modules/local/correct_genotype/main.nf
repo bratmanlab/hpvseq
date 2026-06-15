@@ -36,7 +36,10 @@ process CORRECT_GENOTYPE {
     for line in ${others_info};do 
         samp=\$(echo \$line | cut -d ":" -f1)
         genotype=\$(echo \$line | cut -d ":" -f2)
-        echo $samp $genotype
+        n=\$(awk -v samp=\$samp 'BEGIN{n=0}{if(\$1==samp) n+=1}END{print n}' corrected_genotypes.txt )
+        if [[ "\$n" == "0" ]];then
+            echo \$samp \$genotype
+        fi
         done >> corrected_genotypes.txt 
     """
 
