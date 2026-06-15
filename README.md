@@ -148,17 +148,16 @@ For more details about the output files and reports, please refer to the
 ```text
 .
 ├── Alignment (as basis)
-│   └── bwa 
-├── ConsensusCruncher ❓
-│   ├── hg ❓
-│   ├── genotyping ❓
-│   ├── dominant genotypes ❓
-│   └── corrected genotypes ❓
+│   └── bwa                                                                        ✅  
+├── ConsensusCruncher 
+│   ├── hg                                                                         ✅
+│   ├── genotyping                                                                 ✅
+│   ├── dominant genotypes                                                         ✅
+│   └── corrected genotypes                                                        ✅
 ├── Integration ❓
 │   └── on dominant or corrected genotypes ❓
-├── Insert size ❓
-│   ├── dominant genotypes ❓
-│   └── corrected genotypes ❓
+└── Insert size ❓
+    └── dominant or corrected genotypes ❓
 
 ```
 
@@ -176,13 +175,13 @@ bratmanlab/hpvseq was originally written by Jinfeng Zou.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
-<!-- TODO bratmanlab: If applicable, make list of people who have also contributed -->
+<!-- TODO bratmanlab: If applicable, make list of people who have also contributed 
 
 ## Contributions and Support
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
 
-For further information or help, don't hesitate to get in touch on the [Slack `#hpvseq` channel](https://nfcore.slack.com/channels/hpvseq) (you can join with [this invite](https://nf-co.re/join/slack)).
+For further information or help, don't hesitate to get in touch on the [Slack `#hpvseq` channel](https://nfcore.slack.com/channels/hpvseq) (you can join with [this invite](https://nf-co.re/join/slack)).  -->
 
 ## Citations
 
