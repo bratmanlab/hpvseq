@@ -3,9 +3,10 @@ process CONSENSUSCRUNCHER {
     label 'process_higher'
 
     maxRetries    = 3
+    def retryCodes = (130..145) + [104, 175]
     errorStrategy {
         // Retry scheduler/resource failures
-        if( task.exitStatus in [137, 140, 143, 247] )
+        if( task.exitStatus in retryCodes )
             return 'retry'
 
         // Retry OOM / walltime messages
