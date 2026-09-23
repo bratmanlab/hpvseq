@@ -308,6 +308,7 @@ workflow HPVSEQ {
     )
 
     // Summary: if skip_genotyping
+    ch_index_report          = ch_passed.map { meta, reads, file -> file }.collect()
     ch_nreads_raw_report     = COUNT_READS_RAW.out.nreads.map { meta, file -> file }.collect()
     ch_nreads_goodumi_report = COUNT_READS_GOODUMI.out.nreads.map { meta, file -> file }.collect()
     ch_hsmetrics_report      = PICARD_COLLECTHSMETRICS.out.metrics.map { meta, file -> file }.collect()
@@ -315,6 +316,7 @@ workflow HPVSEQ {
     println ch_nreads_goodumi_report
  
     SUMMARIZE_TOHSMETRICS (
+        ch_index_report,
 	ch_nreads_raw_report,
 	ch_nreads_goodumi_report,
 	ch_hsmetrics_report

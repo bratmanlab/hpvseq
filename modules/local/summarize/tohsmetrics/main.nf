@@ -2,11 +2,14 @@ process SUMMARIZE_TOHSMETRICS {
     tag "summarize_toHsmetrics"
 
     input:
+    path index_files
     path nreads_raw_files
     path nreads_goodumi_files
     path hsmetrics_files
 
     output:
+    path("*index.summ.txt"), emit: summ_index 
+    path("*index.summ.table.txt"), emit: summ_index_table 
     path("*nreads.summ.txt"), emit: summ_nreads 
     path("*nreads.summ.table.txt"), emit: summ_nreads_table 
     path("*hsmetrics.summ.txt"), emit: summ_hsmetrics 
@@ -15,6 +18,8 @@ process SUMMARIZE_TOHSMETRICS {
 
     script:
     hsmetrics_file1 = hsmetrics_files[0]
+    summ_index_file = "index.summ.txt"
+    summ_index_table_file = "index.summ.table.txt"
     summ_nreads_file = "nreads.summ.txt"
     summ_nreads_table_file = "nreads.summ.table.txt"
     summ_hsmetrics_file = "hsmetrics.summ.txt"
@@ -45,6 +50,20 @@ process SUMMARIZE_TOHSMETRICS {
             done >> \$outfile
     }
 
+    ## index 
+    for file in ${index_files};do
+        cat \$file
+        done > ${summ_index_file}
+
+    echo "Sample i7 i5revcomp" > ${summ_index_table_file}
+    cat ${summ_index_file} | while read line;do
+        samp=\$(echo \$line | awk '{print \$3}')
+        samp=\${samp%_L*}
+        i7=\$(echo \$line | awk '{print \$1}')
+        i5orRevcomp=\$(echo \$line | awk '{print \$2}')
+        echo "\$samp \$i7 \$i5orRevcomp"
+        done | sort -k1 | uniq >> ${summ_index_table_file}
+ 
     ## nreads: raw, goodumi
     for file in ${nreads_raw_files};do
         samp=\${file/_raw*}
@@ -70,12 +89,11 @@ process SUMMARIZE_TOHSMETRICS {
 
     awk 'NR==1{print "Sample", "PCT_OFF_BAIT", "PCT_NEAR_BAIT", "PCT_ON_BAIT", "PCT_ON_TARGET"}NR>1{offbait=\$12/\$8*100; nearbait=\$11/\$8*100; onbait=\$10/\$8*100; ontarget=\$13/\$8*100; print \$1, offbait, nearbait, onbait, ontarget}' ${summ_hsmetrics_file} > ${summ_hsmetrics_table_file}
 
-    ## merge nreads and on-target rate
-    for f in ${summ_hsmetrics_table_file}; do
-        awk 'NR==FNR { a[i++]=\$1; next } { d[\$1]=\$0 } END { for(j=0; j<i; j++) print d[a[j]] }' ${summ_nreads_table_file} \$f > \${f}_2
-    done
+    ## merge index, nreads and on-target rate
+    awk 'NR==FNR { a[i++]=\$1; next } { d[\$1]=\$0 } END { for(j=0; j<i; j++) print d[a[j]] }' ${summ_index_table_file} ${summ_nreads_table_file} > ${summ_nreads_table_file}_2
+    awk 'NR==FNR { a[i++]=\$1; next } { d[\$1]=\$0 } END { for(j=0; j<i; j++) print d[a[j]] }' ${summ_index_table_file} ${summ_hsmetrics_table_file} > ${summ_hsmetrics_table_file}_2
 
-    paste -d " " ${summ_nreads_table_file} ${summ_hsmetrics_table_file}_2 > summ_tohsmetrics.txt
+    paste -d " " ${summ_index_table_file} ${summ_nreads_table_file}_2 ${summ_hsmetrics_table_file}_2 > summ_tohsmetrics.txt
 
     """
 

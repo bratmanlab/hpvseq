@@ -8,9 +8,10 @@ process INDEX_MISMATCH {
     val(index_mismatch)
 
     output:
-    tuple val(meta), path(reads), path("pass.txt"), path("sample_index.txt"), emit: reads
+    tuple val(meta), path(reads), path("pass.txt"), path("*sample_index.txt"), emit: reads
 
     script:
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     cut=${index_mismatch}
     samp_index=${meta.id}.R1.index
@@ -38,14 +39,14 @@ process INDEX_MISMATCH {
         npass=\$(awk 'BEGIN{s=0}{if(\$3>0) s+=1}END{print s}' \$samp_index)
         if [[ "\$n" == "\$npass" ]];then
             echo "1" > pass.txt # pass
-            head -1 \$samp_index | awk '{print \$1, \$2}' > sample_index.txt
+            head -1 \$samp_index | awk -v samp=${meta.id} '{print \$1, \$2, samp}' > ${prefix}_sample_index.txt
         else
             echo "0" > pass.txt
-            echo "null" > sample_index.txt 
+            echo "null" > ${prefix}_sample_index.txt 
         fi
     else
         echo "0" > pass.txt
-        echo "null" > sample_index.txt 
+        echo "null" > ${prefix}_sample_index.txt 
     fi
 
     """
